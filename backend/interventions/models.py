@@ -14,8 +14,8 @@ class Intervention(models.Model):
         null=True,
         related_name='interventions'
     )
-    commentaire = models.TextField(blank=True)
+    commentaire = models.TextField()
     date_intervention = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Intervention sur {self.demande.titre}"
+        return f"Intervention sur {self.demande.titre} par {self.intervenant}"

@@ -1,12 +1,7 @@
-
 from django.contrib import admin
-from .models import Categorie, Demande
-
-@admin.register(Categorie)
-class CategorieAdmin(admin.ModelAdmin):
-    list_display = ('nom',)
+from .models import Demande
 
 @admin.register(Demande)
 class DemandeAdmin(admin.ModelAdmin):
-    list_display = ('titre', 'statut', 'urgence', 'categorie', 'demandeur', 'date_creation')
-    list_filter = ('statut', 'urgence', 'categorie')
+    list_display = ('titre', 'statut', 'urgence', 'type_intervention', 'demandeur', 'date_creation')
+    list_filter = ('statut', 'urgence', 'type_intervention')
