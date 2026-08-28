@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import InterventionListCreateView, InterventionDetailView
+from .views import CommentaireListCreateView, CommentaireDetailView
 
 urlpatterns = [
-    path('', InterventionListCreateView.as_view(), name='interventions'),
-    path('<int:pk>/', InterventionDetailView.as_view(), name='intervention-detail'),
+    path('', CommentaireListCreateView.as_view(), name='commentaires'),
+    path('<int:pk>/', CommentaireDetailView.as_view(), name='commentaire-detail'),
 ]

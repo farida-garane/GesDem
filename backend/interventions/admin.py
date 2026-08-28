@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Intervention
+from .models import Commentaire
 
-@admin.register(Intervention)
-class InterventionAdmin(admin.ModelAdmin):
-    list_display = ('demande', 'intervenant', 'date_intervention')
+@admin.register(Commentaire)
+class CommentaireAdmin(admin.ModelAdmin):
+    list_display = ('demande', 'auteur', 'date_creation')

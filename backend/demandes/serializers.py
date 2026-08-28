@@ -1,39 +1,69 @@
 from rest_framework import serializers
-from .models import Demande
+from .models import Demande, Categorie, Statut, HistoriqueStatut
 from accounts.models import User
 
+class CategorieSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categorie
+        fields = ['id', 'libelle', 'description']
+
+class StatutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Statut
+        fields = ['id', 'libelle', 'ordre', 'couleur']
+
 class DemandeurSerializer(serializers.ModelSerializer):
+    nom = serializers.CharField(source='username', read_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'nom', 'email', 'role']
 
 class DemandeSerializer(serializers.ModelSerializer):
     demandeur = DemandeurSerializer(read_only=True)
+    technicien = DemandeurSerializer(read_only=True)
+    categorie_details = CategorieSerializer(source='categorie', read_only=True)
+    statut_details = StatutSerializer(source='statut', read_only=True)
 
     class Meta:
         model = Demande
         fields = [
             'id',
-            'titre',
+            'reference',
+            'objet',
             'description',
-            'type_intervention',
+            'categorie',
+            'categorie_details',
             'urgence',
             'statut',
+            'statut_details',
+            'localisation',
+            'piece_jointe',
             'demandeur',
+            'technicien',
             'date_creation',
-            'date_modification'
+            'date_modification',
+            'date_cloture'
         ]
-        # statut et demandeur ne sont pas modifiables par le demandeur
-        read_only_fields = ['id', 'demandeur', 'date_creation', 'date_modification']
+        read_only_fields = ['id', 'reference', 'demandeur', 'date_creation', 'date_modification', 'date_cloture']
 
 class DemandeCreationSerializer(serializers.ModelSerializer):
     """Serializer utilisé uniquement pour la création d'une demande"""
     class Meta:
         model = Demande
-        fields = ['titre', 'description', 'type_intervention', 'urgence']
+        fields = ['objet', 'description', 'categorie', 'urgence', 'statut', 'localisation', 'piece_jointe']
 
 class DemandeStatutSerializer(serializers.ModelSerializer):
-    """Serializer utilisé uniquement pour changer le statut (par l'intervenant)"""
+    """Serializer utilisé pour changer le statut ou s'assigner la demande (par le technicien)"""
     class Meta:
         model = Demande
-        fields = ['statut']
+        fields = ['statut', 'technicien']
+
+class HistoriqueStatutSerializer(serializers.ModelSerializer):
+    ancien_statut = StatutSerializer(read_only=True)
+    nouveau_statut = StatutSerializer(read_only=True)
+    modifie_par = DemandeurSerializer(read_only=True)
+
+    class Meta:
+        model = HistoriqueStatut
+        fields = ['id', 'demande', 'ancien_statut', 'nouveau_statut', 'date_changement', 'modifie_par']

@@ -1,27 +1,32 @@
 from rest_framework import generics, permissions
-from .models import Intervention
-from .serializers import InterventionSerializer
+from rest_framework.exceptions import PermissionDenied
+from .models import Commentaire
+from .serializers import CommentaireSerializer
 
-class InterventionListCreateView(generics.ListCreateAPIView):
-    serializer_class = InterventionSerializer
+class CommentaireListCreateView(generics.ListCreateAPIView):
+    serializer_class = CommentaireSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['intervenant', 'admin']:
-            return Intervention.objects.all()
-        # un demandeur voit les interventions sur ses propres demandes
-        return Intervention.objects.filter(demande__demandeur=user)
+        if user.role in ['technicien', 'admin']:
+            return Commentaire.objects.all()
+        # un demandeur voit les commentaires sur ses propres demandes
+        return Commentaire.objects.filter(demande__demandeur=user)
 
     def perform_create(self, serializer):
-        serializer.save(intervenant=self.request.user)
+        # Techniciens and demandeurs can comment, based on specs (demandeur can comment on their own requests)
+        demande = serializer.validated_data['demande']
+        if self.request.user.role == 'demandeur' and demande.demandeur != self.request.user:
+            raise PermissionDenied("Vous ne pouvez commenter que vos propres demandes.")
+        serializer.save(auteur=self.request.user)
 
-class InterventionDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = InterventionSerializer
+class CommentaireDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CommentaireSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['intervenant', 'admin']:
-            return Intervention.objects.all()
-        return Intervention.objects.filter(demande__demandeur=user)
+        if user.role in ['technicien', 'admin']:
+            return Commentaire.objects.all()
+        return Commentaire.objects.filter(demande__demandeur=user)

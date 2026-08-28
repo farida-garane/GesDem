@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     ROLE_CHOICES=[
         ('demandeur','Demandeur'),
-        ('intervenant','Intervenant'),
+        ('technicien','Technicien'),
         ('admin','Administrateur'),
     ]
     role=models.CharField(
@@ -12,6 +12,8 @@ class User(AbstractUser):
         choices=ROLE_CHOICES,
         default='demandeur'
     )
+    departement = models.CharField(max_length=100, blank=True, null=True)
+    telephone = models.CharField(max_length=20, blank=True, null=True)
 
     def __str__(self):
         return f"{self.username} ({self.role})"
