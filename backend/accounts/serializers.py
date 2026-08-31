@@ -6,7 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'nom', 'email', 'role']
+        fields = ['id', 'nom', 'email', 'role', 'departement', 'telephone']
         read_only_fields = ['id']
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -15,7 +15,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['nom', 'email', 'password', 'role']
+        fields = ['nom', 'email', 'password', 'role', 'departement']
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -25,5 +25,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         if 'role' in validated_data:
             user.role = validated_data['role']
-            user.save()
+        if 'departement' in validated_data:
+            user.departement = validated_data['departement']
+        user.save()
         return user

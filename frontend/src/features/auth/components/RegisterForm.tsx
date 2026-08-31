@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { UserRole } from '@/types/user';
-import Link from 'next/link';
 
 export function RegisterForm() {
   const router = useRouter();
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
+  const [departement, setDepartement] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<UserRole>('demandeur');
@@ -40,6 +40,7 @@ export function RegisterForm() {
       await authService.register({
         nom: nom.trim(),
         email: email.trim(),
+        departement: departement.trim(),
         password,
         role,
       });
@@ -92,12 +93,19 @@ export function RegisterForm() {
       />
 
       <Input
+        label="Département / Service"
+        value={departement}
+        onChange={(e) => setDepartement(e.target.value)}
+        placeholder="Ex : Comptabilité, Informatique,..."
+      />
+
+      <Input
         label="Mot de passe"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
-        placeholder="Créez un mot de passe "
+        placeholder="Créez un mot de passe"
       />
 
       <Input
@@ -116,7 +124,7 @@ export function RegisterForm() {
         options={[
           { value: 'demandeur', label: 'Demandeur' },
           { value: 'technicien', label: 'Technicien' },
-          { value: 'administrateur', label: 'Administrateur' },
+          { value: 'admin', label: 'Administrateur' },
         ]}
         placeholder="Sélectionnez votre rôle"
       />

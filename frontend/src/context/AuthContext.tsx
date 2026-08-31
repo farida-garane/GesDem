@@ -18,30 +18,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Utilisateur fictif par défaut pour naviguer librement sans connexion
-const DEFAULT_GUEST_USER: User = {
-  id: 1,
-  nom: 'Utilisateur Démo',
-  email: 'demo@gesdem.local',
-  role: 'admin', // Permet d'afficher tous les blocs (Demandeur, Technicien, Admin)
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(DEFAULT_GUEST_USER);
-  const [token, setToken] = useState<string | null>('mock-token');
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const refreshUser = useCallback(async () => {
     try {
-      const storedToken = localStorage.getItem('gesdem_token');
+      const storedToken = typeof window !== 'undefined' ? localStorage.getItem('gesdem_token') : null;
       if (storedToken) {
         setToken(storedToken);
         const profile = await authService.getProfile();
         setUser(profile);
       }
     } catch {
-      // Garder l'utilisateur démo par défaut
+      setUser(null);
+      setToken(null);
     }
   }, []);
 
@@ -64,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     authService.logout();
-    setUser(DEFAULT_GUEST_USER);
+    setUser(null);
     setToken(null);
     router.push('/login');
   };
@@ -78,8 +71,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         refreshUser,
-        isAuthenticated: true,
-        role: user?.role || 'admin',
+        isAuthenticated: Boolean(token && user),
+        role: user?.role || null,
       }}
     >
       {children}

@@ -4,7 +4,6 @@ import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
   title: 'DemOps - Gestion des demandes et interventions internes',
-  description: 'Plateforme de tickets et de maintenance interne.',
 };
 
 export default function RootLayout({

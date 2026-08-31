@@ -1,10 +1,48 @@
 @import "tailwindcss";
 
-* {
-  border-color: #e2e8f0;
+@theme {
+  /* ==========================================================================
+     PALETTE DE COULEURS DU PROJET (Modifiez vos couleurs ici)
+     ========================================================================== */
+
+  /* 🔹 Couleur Principale / Marque (Boutons d'action, liens, sélections) */
+  --color-primary: #2563eb;         /* Bleu principal */
+  --color-primary-hover: #1d4ed8;   /* État au survol / focus */
+  --color-primary-light: #eff6ff;   /* Arrière-plan clair, badges légers */
+
+  /* 🔹 Couleurs de Statut & Priorité des Demandes */
+  --color-status-success: #10b981;  /* Demande résolue / Priorité faible (Vert) */
+  --color-status-warning: #f59e0b;  /* Demande en cours / Priorité moyenne (Ambre) */
+  --color-status-danger: #ef4444;   /* Demande rejetée / Priorité élevée (Rouge) */
+  --color-status-info: #0ea5e9;     /* Demande en attente / Informations (Bleu ciel) */
+
+  /* 🔹 Arrière-plans & Surfaces */
+  --color-bg-page: #f8fafc;         /* Arrière-plan général de l'application */
+  --color-bg-surface: #ffffff;      /* Cartes, formulaires, tables, modales */
+  --color-bg-subtle: #f1f5f9;       /* Arrière-plans secondaires, survol de lignes */
+
+  /* 🔹 Typographie & Textes */
+  --color-text-main: #0f172a;       /* Titres, textes principaux et labels foncés */
+  --color-text-muted: #64748b;      /* Textes secondaires, dates, descriptions */
+
+  /* 🔹 Bordures & Séparateurs */
+  --color-border-default: #e2e8f0;  /* Bordures par défaut des cartes et tableaux */
+  --color-border-hover: #cbd5e1;    /* Bordures au survol ou accentuées */
 }
 
+/* ==========================================================================
+   STYLES GLOBAUX DE L'APPLICATION
+   ========================================================================== */
+
+/* Couleur de bordure par défaut appliquée à tous les éléments */
+* {
+  border-color: var(--color-border-default);
+}
+
+/* Configuration du corps de page : fond, couleur de texte et lissage de police */
 body {
+  background-color: var(--color-bg-page);
+  color: var(--color-text-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

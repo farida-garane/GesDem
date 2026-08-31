@@ -15,13 +15,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          <label htmlFor={inputId} className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
             {label}
           </label>
         )}
         <div className="relative rounded-xl shadow-xs">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
               {leftIcon}
             </div>
           )}
@@ -29,18 +29,18 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'block w-full rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm py-2.5 px-3.5 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900/10 disabled:bg-gray-50 disabled:text-gray-500',
+              'block w-full rounded-xl border border-slate-300 bg-white py-2.5 px-3.5 text-sm text-slate-900 placeholder-slate-400 font-medium transition-all duration-200 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/15 disabled:bg-slate-100 disabled:text-slate-500',
               leftIcon && 'pl-10',
-              error && 'border-red-400 focus:border-red-500 focus:ring-red-500/10',
+              error && 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10',
               className
             )}
             {...props}
           />
         </div>
         {error ? (
-          <p className="text-xs text-red-600 font-medium">{error}</p>
+          <p className="text-xs text-rose-600 font-semibold">{error}</p>
         ) : helperText ? (
-          <p className="text-xs text-gray-500">{helperText}</p>
+          <p className="text-xs text-slate-500 font-medium">{helperText}</p>
         ) : null}
       </div>
     );
