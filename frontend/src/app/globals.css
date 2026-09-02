@@ -2,47 +2,103 @@
 
 @theme {
   /* ==========================================================================
-     PALETTE DE COULEURS DU PROJET (Modifiez vos couleurs ici)
+     PALETTE DE COULEURS DU PROJET (Bleu & Orange Astra Harmony)
      ========================================================================== */
 
-  /* 🔹 Couleur Principale / Marque (Boutons d'action, liens, sélections) */
-  --color-primary: #2563eb;         /* Bleu principal */
-  --color-primary-hover: #1d4ed8;   /* État au survol / focus */
-  --color-primary-light: #eff6ff;   /* Arrière-plan clair, badges légers */
+  /* 🔹 Couleur Principale / Marque (Bleu Royal) */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #eff6ff;
 
-  /* 🔹 Couleurs de Statut & Priorité des Demandes */
-  --color-status-success: #10b981;  /* Demande résolue / Priorité faible (Vert) */
-  --color-status-warning: #f59e0b;  /* Demande en cours / Priorité moyenne (Ambre) */
-  --color-status-danger: #ef4444;   /* Demande rejetée / Priorité élevée (Rouge) */
-  --color-status-info: #0ea5e9;     /* Demande en attente / Informations (Bleu ciel) */
+  /* 🔸 Couleur d'Accent & Action (Orange Chaleureux) */
+  --color-accent: #f97316;
+  --color-accent-hover: #ea580c;
+  --color-accent-light: #fff7ed;
+
+  /* 🔹 Couleurs de Statut & Priorité */
+  --color-status-success: #10b981;
+  --color-status-warning: #f59e0b;
+  --color-status-danger: #ef4444;
+  --color-status-info: #0ea5e9;
 
   /* 🔹 Arrière-plans & Surfaces */
-  --color-bg-page: #f8fafc;         /* Arrière-plan général de l'application */
-  --color-bg-surface: #ffffff;      /* Cartes, formulaires, tables, modales */
-  --color-bg-subtle: #f1f5f9;       /* Arrière-plans secondaires, survol de lignes */
+  --color-bg-page: #f0f4f9;
+  --color-bg-surface: #ffffff;
+  --color-bg-subtle: #f8fafc;
 
-  /* 🔹 Typographie & Textes */
-  --color-text-main: #0f172a;       /* Titres, textes principaux et labels foncés */
-  --color-text-muted: #64748b;      /* Textes secondaires, dates, descriptions */
+  /* 🔹 Typographie Haute Netteté */
+  --color-text-main: #020617;
+  --color-text-muted: #334155;
 
-  /* 🔹 Bordures & Séparateurs */
-  --color-border-default: #e2e8f0;  /* Bordures par défaut des cartes et tableaux */
-  --color-border-hover: #cbd5e1;    /* Bordures au survol ou accentuées */
+  /* 🔹 Bordures */
+  --color-border-default: #e2e8f0;
+  --color-border-hover: #cbd5e1;
 }
 
-/* ==========================================================================
-   STYLES GLOBAUX DE L'APPLICATION
-   ========================================================================== */
-
-/* Couleur de bordure par défaut appliquée à tous les éléments */
+/* Couleur de bordure par défaut */
 * {
   border-color: var(--color-border-default);
 }
 
-/* Configuration du corps de page : fond, couleur de texte et lissage de police */
+/* Fond atmosphérique doux et typographie ultra-nette */
 body {
-  background-color: var(--color-bg-page);
+  background: linear-gradient(135deg, #eaf0f8 0%, #f1f5f9 50%, #e5eef8 100%);
+  background-attachment: fixed;
   color: var(--color-text-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  min-height: 100vh;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatSoft {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: floatSoft 3s ease-in-out infinite;
+}
+
+/* Barre latérale totalement transparente (Sans aucune couleur de fond) */
+.astra-sidebar-gradient {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Pilule active flottante */
+.astra-active-pill {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  color: #2563eb !important;
+}
+
+/* Carte épurée */
+.astra-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }

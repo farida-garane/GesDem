@@ -3,11 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
-import { Button } from '@/components/ui/Button';
 import { demandeService } from '@/services/demande.service';
 import { Categorie, UrgenceLevel } from '@/types/demande';
 import { 
@@ -21,7 +19,6 @@ import {
   Zap,
   Flame,
   Send,
-  Eye,
   Pencil
 } from 'lucide-react';
 
@@ -162,23 +159,23 @@ export function NouvelleDemandeForm() {
   const urgenceLabel = urgence === 'eleve' ? 'Haute' : urgence === 'moyen' ? 'Moyenne' : 'Faible';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-16">
+    <div className="max-w-3xl mx-auto space-y-6 pb-16 animate-fade-in">
       
       {/* En-tête avec retour */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/60">
         <div>
           <div className="flex items-center gap-2.5">
             <Link
               href="/demandes"
-              className="w-8 h-8 rounded-xl bg-white border border-slate-200 hover:border-slate-300 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors shadow-2xs"
+              className="w-8 h-8 rounded-xl astra-card hover:border-blue-300 flex items-center justify-center text-slate-600 hover:text-blue-600 transition-colors shadow-2xs"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
             </Link>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Nouvelle demande
             </h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1 pl-10">
+          <p className="text-xs text-slate-500 font-medium mt-1 pl-10">
             Déposez votre ticket auprès du service technique.
           </p>
         </div>
@@ -191,7 +188,7 @@ export function NouvelleDemandeForm() {
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <p className="font-semibold text-sm">Demande enregistrée avec succès !</p>
+            <p className="font-bold text-sm">Demande enregistrée avec succès !</p>
             <p className="text-xs text-emerald-700">Votre demande a été transmise aux techniciens. Redirection en cours...</p>
           </div>
         </div>
@@ -201,18 +198,18 @@ export function NouvelleDemandeForm() {
       {serverError && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-center gap-3 text-rose-900">
           <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-          <p className="text-xs font-medium">{serverError}</p>
+          <p className="text-xs font-bold">{serverError}</p>
         </div>
       )}
 
       {/* Formulaire Principal ou Récapitulatif */}
       {!showRecap ? (
-        <Card className="p-6 sm:p-8 bg-white border border-slate-200/90 shadow-xs rounded-3xl space-y-6">
+        <div className="p-6 sm:p-8 astra-card rounded-3xl space-y-6">
           <form onSubmit={handleGoToRecap} className="space-y-6">
             
             {/* 1. OBJET */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-800 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
                 Objet de la demande *
               </label>
               <Input
@@ -229,7 +226,7 @@ export function NouvelleDemandeForm() {
               
               {/* Catégorie */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-800 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
                   Catégorie *
                 </label>
                 <Select
@@ -242,9 +239,9 @@ export function NouvelleDemandeForm() {
                 />
               </div>
 
-              {/* Urgence (Pilules épurées) */}
+              {/* Urgence */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-800 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
                   Niveau d&apos;urgence *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -253,10 +250,10 @@ export function NouvelleDemandeForm() {
                   <button
                     type="button"
                     onClick={() => setUrgence('faible')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       urgence === 'faible'
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-blue-50/50'
                     }`}
                   >
                     <Shield className="w-3.5 h-3.5" />
@@ -267,10 +264,10 @@ export function NouvelleDemandeForm() {
                   <button
                     type="button"
                     onClick={() => setUrgence('moyen')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       urgence === 'moyen'
                         ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-amber-50/50'
                     }`}
                   >
                     <Zap className="w-3.5 h-3.5" />
@@ -281,10 +278,10 @@ export function NouvelleDemandeForm() {
                   <button
                     type="button"
                     onClick={() => setUrgence('eleve')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       urgence === 'eleve'
                         ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-rose-50/50'
                     }`}
                   >
                     <Flame className="w-3.5 h-3.5" />
@@ -299,7 +296,7 @@ export function NouvelleDemandeForm() {
             {/* Précision si 'Autre' */}
             {isAutreSelected() && (
               <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1.5 animate-in fade-in">
-                <label className="block text-xs font-semibold text-amber-900 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-amber-900 uppercase tracking-wider">
                   Précisez votre besoin *
                 </label>
                 <Input
@@ -314,7 +311,7 @@ export function NouvelleDemandeForm() {
 
             {/* 3. DESCRIPTION */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-800 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
                 Description détaillée *
               </label>
               <Textarea
@@ -341,90 +338,90 @@ export function NouvelleDemandeForm() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-dashed border-slate-300 hover:border-blue-400 bg-white/80 hover:bg-white text-xs font-bold text-slate-700 hover:text-blue-700 transition-colors cursor-pointer"
                 >
-                  <Paperclip className="w-3.5 h-3.5 text-slate-500" />
+                  <Paperclip className="w-4 h-4 text-blue-600" />
                   <span>Joindre une capture d&apos;écran ou un fichier (optionnel)</span>
                 </button>
               ) : (
-                <div className="inline-flex items-center gap-3 p-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-                  <div className="w-6 h-6 rounded-lg bg-slate-200 flex items-center justify-center text-slate-700 shrink-0">
-                    <FileText className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center gap-3 p-2.5 px-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl text-xs">
+                  <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0">
+                    <FileText className="w-4 h-4" />
                   </div>
-                  <span className="font-semibold text-slate-900 truncate max-w-xs">{pieceJointe.name}</span>
-                  <span className="text-[11px] text-slate-400">({(pieceJointe.size / 1024).toFixed(1)} Ko)</span>
+                  <span className="font-bold text-slate-900 truncate max-w-xs">{pieceJointe.name}</span>
+                  <span className="text-[11px] text-slate-500 font-medium">({(pieceJointe.size / 1024).toFixed(1)} Ko)</span>
                   <button
                     type="button"
                     onClick={removeFile}
-                    className="p-1 hover:bg-slate-200 text-slate-400 hover:text-rose-600 rounded-md transition-colors cursor-pointer"
+                    className="p-1 hover:bg-rose-100 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}
               {errors.pieceJointe && (
-                <p className="text-xs text-rose-600 font-medium mt-1">{errors.pieceJointe}</p>
+                <p className="text-xs text-rose-600 font-bold mt-1">{errors.pieceJointe}</p>
               )}
             </div>
 
             {/* 5. BOUTON ACTION */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
-              <Button
+              <button
                 type="submit"
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-bold shadow-md shadow-orange-500/25 hover:shadow-lg active:scale-95 transition-all cursor-pointer flex items-center gap-2"
               >
                 <span>Vérifier et Envoyer</span>
-                <Send className="w-3.5 h-3.5" />
-              </Button>
+                <Send className="w-3.5 h-3.5 stroke-[2.5]" />
+              </button>
             </div>
 
           </form>
-        </Card>
+        </div>
       ) : (
         /* VUE RÉCAPITULATIF */
-        <Card className="p-6 sm:p-8 bg-white border border-slate-200/90 shadow-xs rounded-3xl space-y-6 animate-in fade-in">
+        <div className="p-6 sm:p-8 astra-card rounded-3xl space-y-6 animate-in fade-in">
           <div className="pb-3 border-b border-slate-100">
-            <h2 className="text-sm font-semibold text-slate-900">
+            <h2 className="text-base font-extrabold text-slate-900">
               Vérification de votre demande
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
               Assurez-vous que les informations sont exactes avant transmission.
             </p>
           </div>
 
           <div className="space-y-4 text-xs">
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-              <span className="text-slate-400 font-semibold uppercase text-[10px] block">Objet</span>
-              <p className="text-sm font-semibold text-slate-900">{objet}</p>
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
+              <span className="text-slate-500 font-bold uppercase text-[10px] block">Objet</span>
+              <p className="text-sm font-extrabold text-slate-900">{objet}</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                <span className="text-slate-400 font-semibold uppercase text-[10px] block">Catégorie</span>
-                <p className="text-xs font-semibold text-slate-900">
+              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
+                <span className="text-slate-500 font-bold uppercase text-[10px] block">Catégorie</span>
+                <p className="text-xs font-bold text-slate-900">
                   {selectedCategorieObj?.libelle || 'Non renseignée'}
                   {isAutreSelected() && autreCategoriePrecision && ` (${autreCategoriePrecision})`}
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                <span className="text-slate-400 font-semibold uppercase text-[10px] block">Urgence</span>
-                <p className={`text-xs font-semibold ${urgence === 'eleve' ? 'text-rose-600' : urgence === 'moyen' ? 'text-amber-600' : 'text-slate-800'}`}>
+              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
+                <span className="text-slate-500 font-bold uppercase text-[10px] block">Urgence</span>
+                <p className={`text-xs font-extrabold ${urgence === 'eleve' ? 'text-rose-600' : urgence === 'moyen' ? 'text-amber-600' : 'text-blue-700'}`}>
                   {urgenceLabel}
                 </p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-              <span className="text-slate-400 font-semibold uppercase text-[10px] block">Description</span>
-              <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed bg-white p-3 rounded-xl border border-slate-200">
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
+              <span className="text-slate-500 font-bold uppercase text-[10px] block">Description</span>
+              <p className="text-xs text-slate-800 font-medium whitespace-pre-wrap leading-relaxed bg-white p-3 rounded-xl border border-slate-200">
                 {description}
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-              <span className="text-slate-400 font-semibold uppercase text-[10px]">Pièce jointe</span>
-              <span className="text-slate-900 font-semibold">
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between">
+              <span className="text-slate-500 font-bold uppercase text-[10px]">Pièce jointe</span>
+              <span className="text-slate-900 font-bold">
                 {pieceJointe ? pieceJointe.name : 'Aucun fichier joint'}
               </span>
             </div>
@@ -435,23 +432,23 @@ export function NouvelleDemandeForm() {
               type="button"
               onClick={() => setShowRecap(false)}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
               <Pencil className="w-3.5 h-3.5" />
               <span>Modifier</span>
             </button>
 
-            <Button
+            <button
               type="button"
               onClick={handleFinalSubmit}
-              isLoading={isSubmitting}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer flex items-center gap-2"
+              disabled={isSubmitting}
+              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-bold shadow-md shadow-orange-500/25 hover:shadow-lg active:scale-95 transition-all cursor-pointer flex items-center gap-2"
             >
-              <Send className="w-3.5 h-3.5" />
-              <span>Envoyer la demande</span>
-            </Button>
+              <Send className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>{isSubmitting ? 'Envoi en cours...' : 'Envoyer la demande'}</span>
+            </button>
           </div>
-        </Card>
+        </div>
       )}
 
     </div>

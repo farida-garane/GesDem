@@ -40,6 +40,8 @@ export interface Demande {
   date_modification: string;
   date_cloture?: string | null;
   note_resolution?: string | null;
+  note_satisfaction?: number | null;
+  avis_satisfaction?: string | null;
 }
 
 export interface HistoriqueStatut {

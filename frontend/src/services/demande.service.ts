@@ -68,6 +68,33 @@ export const demandeService = {
     return await api.post<Demande>('/api/demandes/', formData, true);
   },
 
+  async updateDemande(id: number | string, data: Partial<CreateDemandeInput>): Promise<Demande> {
+    if (data.piece_jointe instanceof File) {
+      const formData = new FormData();
+      if (data.objet) formData.append('objet', data.objet);
+      if (data.description) formData.append('description', data.description);
+      if (data.urgence) formData.append('urgence', data.urgence);
+      if (data.categorie) formData.append('categorie', String(data.categorie));
+      formData.append('piece_jointe', data.piece_jointe);
+      return await api.patch<Demande>(`/api/demandes/${id}/`, formData, true);
+    }
+    return await api.patch<Demande>(`/api/demandes/${id}/`, data);
+  },
+
+  async annulerDemande(id: number | string, motif?: string): Promise<Demande> {
+    return await api.patch<Demande>(`/api/demandes/${id}/`, {
+      statut: 5, // Statut clôturé / annulé
+      note_resolution: motif ? `Demande annulée par le demandeur. Motif : ${motif}` : 'Demande annulée par le demandeur.',
+    });
+  },
+
+  async evaluerDemande(id: number | string, note: number, avis?: string): Promise<Demande> {
+    return await api.patch<Demande>(`/api/demandes/${id}/`, {
+      note_satisfaction: note,
+      avis_satisfaction: avis || '',
+    });
+  },
+
   async updateDemandeStatut(id: number | string, data: { statut?: number; technicien?: number | null }): Promise<Demande> {
     return await api.patch<Demande>(`/api/demandes/${id}/`, data);
   },
