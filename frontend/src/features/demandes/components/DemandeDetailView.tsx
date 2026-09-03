@@ -3,31 +3,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
+import { SlaBadge } from '@/components/ui/SlaBadge';
 import { demandeService } from '@/services/demande.service';
+import { escaladeService } from '@/services/escalade.service';
 import { Demande, HistoriqueStatut, Commentaire, UrgenceLevel } from '@/types/demande';
+import { EscaladeExterne } from '@/types/escalade';
 import {
-  ArrowLeft,
-  Calendar,
-  User,
-  Paperclip,
-  CheckCircle2,
-  Send,
   Loader2,
-  AlertCircle,
-  FileText,
-  UserCheck,
-  History,
-  MessageSquare,
-  Check,
-  Star,
-  Pencil,
-  XCircle,
-  Download,
-  ExternalLink,
-  Trash2,
-  X,
-  Sparkles,
-  Info
+  X
 } from 'lucide-react';
 
 interface DemandeDetailViewProps {
@@ -38,6 +21,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
   const [demande, setDemande] = useState<Demande | null>(null);
   const [historique, setHistorique] = useState<HistoriqueStatut[]>([]);
   const [commentaires, setCommentaires] = useState<Commentaire[]>([]);
+  const [escalades, setEscalades] = useState<EscaladeExterne[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,16 +40,16 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
   const [nouveauCommentaire, setNouveauCommentaire] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
 
-  // Evaluation State
-  const [rating, setRating] = useState<number>(5);
-  const [hoverRating, setHoverRating] = useState<number>(0);
-  const [avisComment, setAvisComment] = useState('');
-  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
-
   // Modals (Annulation & Modification)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelMotif, setCancelMotif] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
+
+  // Validation de Clôture & Réouverture
+  const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
+  const [reopenMotif, setReopenMotif] = useState('');
+  const [isReopening, setIsReopening] = useState(false);
+  const [isClosingDirect, setIsClosingDirect] = useState(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editObjet, setEditObjet] = useState('');
@@ -79,26 +63,22 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
       setLoading(true);
       setError(null);
 
-      const [demandeData, historiqueData, commentairesData] = await Promise.all([
+      const [demandeData, historiqueData, commentairesData, escaladesData] = await Promise.all([
         demandeService.getDemandeById(demandeId),
         demandeService.getDemandeHistorique(demandeId),
         demandeService.getCommentaires(demandeId),
+        escaladeService.getEscalades(demandeId),
       ]);
 
       setDemande(demandeData);
       setHistorique(historiqueData);
       setCommentaires(commentairesData);
+      setEscalades(escaladesData);
 
       if (demandeData) {
         setEditObjet(demandeData.objet);
         setEditDescription(demandeData.description);
         setEditUrgence(demandeData.urgence);
-        if (demandeData.note_satisfaction) {
-          setRating(demandeData.note_satisfaction);
-        }
-        if (demandeData.avis_satisfaction) {
-          setAvisComment(demandeData.avis_satisfaction);
-        }
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement de la demande.');
@@ -110,6 +90,49 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Validation de Clôture définitive par le demandeur
+  const handleConfirmClosure = async () => {
+    if (!demande) return;
+    setIsClosingDirect(true);
+    try {
+      await demandeService.cloturerDemande(demande.id);
+      showToast('Votre demande a été clôturée avec succès !', 'success');
+      await loadData();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Erreur lors de la clôture', 'error');
+    } finally {
+      setIsClosingDirect(false);
+    }
+  };
+
+  // Réouverture du ticket par le demandeur
+  const handleConfirmReopen = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!demande || !reopenMotif.trim()) return;
+
+    setIsReopening(true);
+    try {
+      await demandeService.rouvrirDemande(demande.id, reopenMotif.trim());
+      // Ajouter un commentaire explicatif
+      try {
+        await demandeService.createCommentaire(
+          demande.id,
+          `🔄 [Ticket Rouvert par le demandeur] Motif : ${reopenMotif.trim()}`
+        );
+      } catch {
+        // ignorer
+      }
+      setIsReopenModalOpen(false);
+      setReopenMotif('');
+      showToast('Le ticket a été rouvert et réassigné au support technique.', 'success');
+      await loadData();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Erreur lors de la réouverture', 'error');
+    } finally {
+      setIsReopening(false);
+    }
+  };
 
   // Envoi d'un commentaire
   const handleSendComment = async (e: React.FormEvent) => {
@@ -168,23 +191,6 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
     }
   };
 
-  // Soumission de l'évaluation de satisfaction
-  const handleSubmitEvaluation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!demande) return;
-
-    setIsSubmittingRating(true);
-    try {
-      const updated = await demandeService.evaluerDemande(demande.id, rating, avisComment.trim());
-      setDemande((prev) => (prev ? { ...prev, note_satisfaction: rating, avis_satisfaction: avisComment.trim() } : updated));
-      showToast('Merci pour votre retour d\'expérience !', 'success');
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement de votre avis', 'error');
-    } finally {
-      setIsSubmittingRating(false);
-    }
-  };
-
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -224,15 +230,11 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
   if (error || !demande) {
     return (
       <div className="p-8 max-w-xl mx-auto text-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mx-auto">
-          <AlertCircle className="w-6 h-6" />
-        </div>
         <p className="text-sm font-bold text-slate-900">Demande introuvable</p>
         <Link
           href="/demandes"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-black transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
           <span>Retour à mes demandes</span>
         </Link>
       </div>
@@ -250,7 +252,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
     { label: 'Demande assignée', completed: Boolean(demande.technicien) || demande.statut! >= 2 },
     { label: 'Intervention en cours', completed: demande.statut! >= 3, current: demande.statut === 3 },
     { label: 'Résolue', completed: demande.statut! >= 4, current: demande.statut === 4 },
-    { label: 'Clôturée', completed: demande.statut === 5, current: demande.statut === 5 },
+    { label: 'Clôturée', completed: demande.statut! >= 5, current: demande.statut === 5 },
   ];
 
   return (
@@ -266,13 +268,6 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
               ? 'bg-rose-900 text-white border-rose-700'
               : 'bg-blue-900 text-white border-blue-700'
           }`}>
-            {toast.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            ) : toast.type === 'error' ? (
-              <AlertCircle className="w-4 h-4 text-rose-400" />
-            ) : (
-              <Info className="w-4 h-4 text-blue-400" />
-            )}
             <span>{toast.message}</span>
             <button onClick={() => setToast(null)} className="ml-2 text-white/70 hover:text-white">
               <X className="w-3.5 h-3.5" />
@@ -285,68 +280,63 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
       <div className="space-y-3">
         <Link
           href="/demandes"
-          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors group"
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#002B7F] hover:text-[#0047cc] transition-colors group"
         >
-          <div className="w-7 h-7 rounded-xl bg-white border border-slate-200 flex items-center justify-center group-hover:border-blue-300 shadow-2xs">
-            <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
-          </div>
-          <span>Retour aux demandes</span>
+          <span>&larr; Retour aux demandes</span>
         </Link>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E2E8F0]">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-mono text-sm font-extrabold text-blue-700 bg-blue-50/90 px-3 py-0.5 rounded-lg border border-blue-200/60">
+              <span className="font-mono text-sm font-black text-[#002B7F] bg-[#E8F1FF] px-3 py-0.5 rounded-lg border border-[#B3D1FF]">
                 {demande.reference || `DEM-0${demande.id}`}
               </span>
               <PriorityBadge urgence={demande.urgence} />
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-lg text-xs font-bold border shadow-2xs"
-                style={{
-                  backgroundColor: `${statutCouleur}15`,
-                  color: statutCouleur,
-                  borderColor: `${statutCouleur}40`,
-                }}
-              >
-                <span
-                  className="w-2 h-2 rounded-full animate-pulse"
-                  style={{ backgroundColor: statutCouleur }}
-                />
+              <SlaBadge demande={demande} />
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-lg text-xs font-black bg-[#E8F1FF] text-[#002B7F] border border-[#B3D1FF]">
+                <span className="w-2 h-2 rounded-full bg-[#002B7F]" />
                 {statutLibelle}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight pt-1">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#002B7F] tracking-tight pt-1">
               {demande.objet}
             </h1>
           </div>
 
-          {/* Boutons d'Action Rapides (Modification / Annulation si en attente) */}
+          {/* Boutons d'Action Rapides */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Bouton Impression Fiche PDF */}
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-4 py-2 rounded-xl bg-[#002B7F] hover:bg-[#001f5c] text-white text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95"
+            >
+              <span>Imprimer la fiche PDF</span>
+            </button>
+
             {isPending && (
               <>
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 hover:text-blue-600 text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-white border border-[#CBD5E1] hover:border-[#002B7F] text-[#002B7F] hover:bg-[#E8F1FF] text-xs font-bold flex items-center transition-all cursor-pointer shadow-xs"
                 >
-                  <Pencil className="w-3.5 h-3.5 text-blue-600" />
                   <span>Modifier</span>
                 </button>
 
                 <button
                   onClick={() => setIsCancelModalOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-800 text-xs font-bold flex items-center transition-all cursor-pointer"
                 >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                   <span>Annuler</span>
                 </button>
               </>
             )}
 
-            <div className="text-left sm:text-right text-xs text-slate-500 font-medium">
+            <div className="text-left sm:text-right text-xs text-[#1E293B] font-semibold">
               <p>Créée le {formatDate(demande.date_creation)}</p>
               {demande.date_cloture && (
-                <p className="text-emerald-700 font-bold mt-0.5">
+                <p className="text-emerald-800 font-bold mt-0.5">
                   Clôturée le {formatDate(demande.date_cloture)}
                 </p>
               )}
@@ -355,9 +345,39 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
         </div>
       </div>
 
+      {/* BANNIÈRE D'INFORMATION PRESTATAIRE / SAV EXTERNE */}
+      {escalades.length > 0 && (
+        <div className="p-5 rounded-3xl bg-[#E8F1FF] border border-[#B3D1FF] space-y-2.5 shadow-xs">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-[#002B7F]">
+                Dossier délégué à un Prestataire / SAV Externe
+              </span>
+              <span className="px-2.5 py-0.5 rounded-lg text-xs font-black bg-white text-[#002B7F] border border-[#B3D1FF]">
+                {escalades[0].nom_prestataire}
+              </span>
+            </div>
+            {escalades[0].reference_externe && (
+              <span className="text-xs font-mono font-black text-[#002B7F] bg-white/80 px-2 py-0.5 rounded-lg">
+                Dossier N° : {escalades[0].reference_externe}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-[#071530] font-semibold leading-relaxed">
+            Votre matériel ou équipement fait actuellement l&apos;objet d&apos;une prise en charge spécialisée. 
+            Motif : {escalades[0].motif}
+          </p>
+          {escalades[0].date_retour_prevue && (
+            <p className="text-[11px] text-[#475569] font-bold">
+              Date de restitution estimée : {formatDate(escalades[0].date_retour_prevue)}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* 2. PROGRESSION DU TRAITEMENT (STEPPER) */}
-      <div className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-3xl space-y-4 shadow-xs">
-        <p className="text-xs font-black uppercase tracking-wider text-slate-800">
+      <div className="p-5 sm:p-6 bg-white border border-slate-100 rounded-3xl space-y-4 shadow-[0_2px_16px_rgba(0,43,127,0.03)]">
+        <p className="text-xs font-black uppercase tracking-wider text-[#002B7F]">
           Progression du traitement
         </p>
 
@@ -371,26 +391,26 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                 key={step.label}
                 className={`flex sm:flex-col items-center sm:items-start gap-3 p-3 rounded-2xl border transition-all ${
                   isCurrent
-                    ? 'border-blue-600 bg-blue-50/80 ring-2 ring-blue-500/20 text-blue-950 font-bold'
+                    ? 'border-[#B3D1FF] bg-[#E8F1FF] text-[#002B7F] font-black shadow-xs'
                     : isDone
-                    ? 'border-emerald-200 bg-emerald-50/50 text-emerald-950 font-semibold'
-                    : 'border-slate-200/80 bg-slate-50/60 text-slate-500'
+                    ? 'border-emerald-100 bg-emerald-50/70 text-emerald-950 font-bold'
+                    : 'border-slate-100 bg-slate-50/50 text-[#475569]'
                 }`}
               >
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
                     isCurrent
-                      ? 'bg-blue-600 text-white animate-pulse'
+                      ? 'bg-[#002B7F] text-white animate-pulse'
                       : isDone
                       ? 'bg-emerald-600 text-white'
-                      : 'bg-slate-200 text-slate-600'
+                      : 'bg-slate-200 text-slate-700'
                   }`}
                 >
-                  {isDone ? <Check className="w-3.5 h-3.5 stroke-[2.5]" /> : idx + 1}
+                  {isDone ? '✓' : idx + 1}
                 </div>
 
                 <div className="overflow-hidden">
-                  <p className={`text-xs truncate ${isCurrent ? 'text-blue-950 font-extrabold' : isDone ? 'text-slate-900 font-bold' : 'text-slate-500'}`}>
+                  <p className={`text-xs truncate ${isCurrent ? 'text-[#002B7F] font-black' : isDone ? 'text-slate-900 font-bold' : 'text-slate-500'}`}>
                     {step.label}
                   </p>
                   <p className="text-[10px] text-slate-500 font-medium">
@@ -403,15 +423,53 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
         </div>
       </div>
 
-      {/* 3. BLOC ENCADRÉ SPÉCIAL : RÉSOLUTION & ÉVALUATION DE SATISFACTION */}
+      {/* 3. BLOC ENCADRÉ SPÉCIAL : RÉSOLUTION */}
       {isResolueOrCloturee && (
         <div className="space-y-4">
+
+          {/* BANNIÈRE D'ACTION DU DEMANDEUR : VALIDATION OU RÉOUVERTURE DU TICKET */}
+          {statutLibelle.toLowerCase().includes('résol') && !statutLibelle.toLowerCase().includes('clôtur') && (
+            <div className="p-5 sm:p-6 bg-[#E8F1FF] border border-[#B3D1FF] rounded-3xl shadow-[0_2px_14px_rgba(0,43,127,0.04)] space-y-4 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#002B7F] text-white">
+                      Action requise
+                    </span>
+                    <h3 className="text-sm font-black text-[#002B7F]">
+                      Confirmation de la résolution
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[#1E293B] font-medium">
+                    Le service technique a indiqué avoir résolu cette demande. Merci de tester et de confirmer le bon fonctionnement.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                  <button
+                    onClick={handleConfirmClosure}
+                    disabled={isClosingDirect}
+                    className="inline-flex items-center px-4 py-2.5 rounded-xl bg-[#002B7F] hover:bg-[#001f5c] text-white text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs disabled:opacity-60"
+                  >
+                    {isClosingDirect ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    <span>Confirmer la clôture</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsReopenModalOpen(true)}
+                    className="inline-flex items-center px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-rose-700 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
+                  >
+                    <span>Le problème persiste / Rouvrir</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Note de Résolution */}
-          <div className="p-6 bg-gradient-to-br from-emerald-50/90 via-white to-emerald-50/40 border border-emerald-200/80 shadow-xs rounded-3xl space-y-4">
-            <div className="flex items-center gap-2 text-emerald-950 border-b border-emerald-100 pb-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 stroke-[2.2]" />
-              <h2 className="text-sm font-extrabold uppercase tracking-wider">
+          <div className="p-6 bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,43,127,0.03)] rounded-3xl space-y-4">
+            <div className="border-b border-slate-100 pb-3">
+              <h2 className="text-sm font-black text-[#002B7F] uppercase tracking-wider">
                 Dossier de Résolution
               </h2>
             </div>
@@ -433,7 +491,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
 
               <div>
                 <p className="text-slate-500 font-bold uppercase text-[10px]">Statut final</p>
-                <span className="inline-block text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-lg font-extrabold mt-0.5">
+                <span className="inline-block text-[#002B7F] bg-[#E8F1FF] px-2.5 py-0.5 rounded-lg font-extrabold mt-0.5">
                   {statutLibelle}
                 </span>
               </div>
@@ -442,111 +500,12 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
             {demande.note_resolution && (
               <div className="pt-2">
                 <p className="text-slate-600 font-bold text-xs mb-1">Note de résolution du technicien :</p>
-                <div className="p-4 rounded-2xl bg-white border border-emerald-200/80 text-xs text-slate-800 font-medium leading-relaxed">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-800 font-medium leading-relaxed">
                   « {demande.note_resolution} »
                 </div>
               </div>
             )}
           </div>
-
-          {/* Module d'Évaluation / Satisfaction ⭐⭐⭐⭐⭐ */}
-          <div className="p-6 bg-white border border-amber-200 rounded-3xl shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-amber-500 fill-amber-500 stroke-[1.5]" />
-                <h3 className="text-sm font-extrabold text-slate-900">
-                  Votre Évaluation &amp; Avis de Satisfaction
-                </h3>
-              </div>
-
-              {demande.note_satisfaction && (
-                <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-black text-xs border border-amber-300 flex items-center gap-1">
-                  <span>Note enregistrée : {demande.note_satisfaction}/5</span>
-                </span>
-              )}
-            </div>
-
-            {demande.note_satisfaction ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`w-6 h-6 ${
-                        star <= demande.note_satisfaction!
-                          ? 'text-amber-500 fill-amber-500'
-                          : 'text-slate-200'
-                      }`}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm font-extrabold text-slate-800">
-                    {demande.note_satisfaction} sur 5
-                  </span>
-                </div>
-                {demande.avis_satisfaction && (
-                  <p className="text-xs text-slate-600 italic bg-amber-50/50 p-3 rounded-xl border border-amber-100">
-                    « {demande.avis_satisfaction} »
-                  </p>
-                )}
-              </div>
-            ) : (
-              <form onSubmit={handleSubmitEvaluation} className="space-y-4">
-                <p className="text-xs text-slate-500 font-medium">
-                  L&apos;intervention est terminée. Comment évaluez-vous la rapidité et l&apos;efficacité du support technique ?
-                </p>
-
-                {/* Sélecteur d'étoiles interactif */}
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setRating(star)}
-                        onMouseEnter={() => setHoverRating(star)}
-                        onMouseLeave={() => setHoverRating(0)}
-                        className="p-1 text-slate-200 hover:scale-110 transition-transform cursor-pointer"
-                      >
-                        <Star
-                          className={`w-7 h-7 transition-colors ${
-                            star <= (hoverRating || rating)
-                              ? 'text-amber-500 fill-amber-500'
-                              : 'text-slate-200'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                  <span className="text-xs font-bold text-slate-700 ml-2">
-                    ({rating}/5 étoiles)
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase">
-                    Votre commentaire (facultatif)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={avisComment}
-                    onChange={(e) => setAvisComment(e.target.value)}
-                    placeholder="Ex: Technicien très réactif et problème résolu en moins de 10 minutes..."
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmittingRating}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
-                >
-                  {isSubmittingRating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Valider mon avis</span>
-                </button>
-              </form>
-            )}
-          </div>
-
         </div>
       )}
 
@@ -554,16 +513,13 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Description & Contenu technique (2 colonnes) */}
-        <div className="lg:col-span-2 p-6 sm:p-7 bg-white border border-slate-200/90 rounded-3xl space-y-6 shadow-xs">
+        <div className="lg:col-span-2 p-6 sm:p-7 bg-white border border-slate-100 rounded-3xl space-y-6 shadow-[0_2px_16px_rgba(0,43,127,0.03)]">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-600 stroke-[2.2]" />
-              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                Détail du problème
-              </h2>
-            </div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#002B7F]">
+              Détail du problème
+            </h2>
             {demande.categorie_details && (
-              <span className="text-xs font-bold px-3 py-0.5 rounded-lg bg-slate-100/90 text-slate-800 border border-slate-200">
+              <span className="text-xs font-medium px-3 py-0.5 rounded-lg bg-[#E8F1FF] text-[#002B7F]">
                 {demande.categorie_details.libelle}
               </span>
             )}
@@ -571,10 +527,10 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
 
           {/* Description */}
           <div className="space-y-2">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
               Description transmise
             </p>
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 text-xs text-slate-900 font-medium leading-relaxed whitespace-pre-wrap">
+            <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 text-xs text-slate-900 font-medium leading-relaxed whitespace-pre-wrap">
               {demande.description}
             </div>
           </div>
@@ -582,36 +538,29 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
           {/* Pièce jointe avec téléchargement et ouverture */}
           {demande.piece_jointe && (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                 Pièce jointe / Capture
               </p>
-              <div className="inline-flex items-center gap-4 p-3.5 rounded-2xl border border-blue-200 bg-blue-50/40 shadow-2xs">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Paperclip className="w-5 h-5 stroke-[2.2]" />
-                </div>
-                <div className="overflow-hidden">
-                  <p className="text-xs font-extrabold text-slate-900 truncate max-w-xs">
-                    {demande.piece_jointe.split('/').pop()}
-                  </p>
-                  <div className="flex items-center gap-3 pt-1">
-                    <a
-                      href={demande.piece_jointe}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 hover:underline"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>Ouvrir l&apos;aperçu</span>
-                    </a>
-                    <a
-                      href={demande.piece_jointe}
-                      download
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-600 hover:text-orange-800 hover:underline"
-                    >
-                      <Download className="w-3 h-3" />
-                      <span>Télécharger</span>
-                    </a>
-                  </div>
+              <div className="p-3.5 rounded-2xl border border-blue-100 bg-[#E8F1FF] space-y-1">
+                <p className="text-xs font-bold text-[#002B7F] truncate">
+                  {demande.piece_jointe.split('/').pop()}
+                </p>
+                <div className="flex items-center gap-3 pt-1">
+                  <a
+                    href={demande.piece_jointe}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-bold text-[#002B7F] hover:underline"
+                  >
+                    Ouvrir l&apos;aperçu
+                  </a>
+                  <a
+                    href={demande.piece_jointe}
+                    download
+                    className="text-[11px] font-bold text-[#FF5E00] hover:underline"
+                  >
+                    Télécharger
+                  </a>
                 </div>
               </div>
             </div>
@@ -619,48 +568,38 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
         </div>
 
         {/* Contacts & Responsables (1 colonne) */}
-        <div className="p-6 sm:p-7 bg-white border border-slate-200/90 rounded-3xl space-y-6 shadow-xs">
+        <div className="p-6 sm:p-7 bg-white border border-slate-100 rounded-3xl space-y-6 shadow-[0_2px_16px_rgba(0,43,127,0.03)]">
           <div className="pb-3 border-b border-slate-100">
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#002B7F]">
               Intervenants &amp; Contacts
             </h2>
           </div>
 
           {/* Demandeur */}
           <div className="space-y-2">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Demandeur</p>
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/80 border border-slate-200/80">
-              <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">
-                <User className="w-4 h-4" />
-              </div>
-              <div className="truncate">
-                <p className="text-xs font-extrabold text-slate-900 truncate">
-                  {demande.demandeur.nom || demande.demandeur.email}
-                </p>
-                {demande.demandeur.departement && (
-                  <p className="text-[11px] text-slate-500 font-medium truncate">{demande.demandeur.departement}</p>
-                )}
-              </div>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Demandeur</p>
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+              <p className="text-xs font-bold text-slate-900 truncate">
+                {demande.demandeur.nom || demande.demandeur.email}
+              </p>
+              {demande.demandeur.departement && (
+                <p className="text-[11px] text-slate-600 font-medium truncate">{demande.demandeur.departement}</p>
+              )}
             </div>
           </div>
 
           {/* Technicien assigné */}
           <div className="space-y-2 pt-2 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Technicien assigné</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Technicien assigné</p>
             {demande.technicien ? (
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-blue-50/70 border border-blue-200/80">
-                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                  <UserCheck className="w-4 h-4" />
-                </div>
-                <div className="truncate">
-                  <p className="text-xs font-extrabold text-slate-900 truncate">
-                    {demande.technicien.nom || demande.technicien.email}
-                  </p>
-                  <p className="text-[11px] text-orange-600 font-bold">En charge du ticket</p>
-                </div>
+              <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100">
+                <p className="text-xs font-bold text-[#002B7F] truncate">
+                  {demande.technicien.nom || demande.technicien.email}
+                </p>
+                <p className="text-[11px] text-[#002B7F] font-bold">En charge du ticket</p>
               </div>
             ) : (
-              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium">
+              <div className="p-3 rounded-2xl bg-[#E8F1FF] text-xs text-[#002B7F] font-medium">
                 En attente d&apos;attribution à un technicien.
               </div>
             )}
@@ -673,23 +612,22 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* TIMELINE DE L'HISTORIQUE */}
-        <div className="p-6 sm:p-7 bg-white border border-slate-200/90 rounded-3xl space-y-4 shadow-xs">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <History className="w-4 h-4 text-blue-600 stroke-[2.2]" />
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+        <div className="p-6 sm:p-7 bg-white border border-slate-100 rounded-3xl space-y-4 shadow-[0_2px_16px_rgba(0,43,127,0.03)]">
+          <div className="pb-3 border-b border-slate-100">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#002B7F]">
               Historique de la demande
             </h2>
           </div>
 
-          <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-blue-100">
+          <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#B3D1FF]">
             {historique.map((item, idx) => (
               <div key={item.id || idx} className="relative">
-                <span className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-white bg-blue-600 shadow-xs" />
+                <span className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-white bg-[#002B7F]" />
                 <div className="space-y-0.5">
-                  <p className="text-xs font-extrabold text-slate-900">
-                    Statut : <span className="text-blue-700">{item.nouveau_statut?.libelle || 'Enregistré'}</span>
+                  <p className="text-xs font-bold text-slate-900">
+                    Statut : <span className="text-[#002B7F]">{item.nouveau_statut?.libelle || 'Enregistré'}</span>
                   </p>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[11px] text-slate-600 font-medium">
                     {formatDateTime(item.date_changement)}
                     {item.modifie_par && ` · par ${item.modifie_par.nom || item.modifie_par.email}`}
                   </p>
@@ -700,23 +638,20 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
         </div>
 
         {/* FIL DE DISCUSSION / COMMENTAIRES */}
-        <div className="p-6 sm:p-7 bg-white border border-slate-200/90 rounded-3xl space-y-4 flex flex-col justify-between shadow-xs">
+        <div className="p-6 sm:p-7 bg-white border border-slate-100 rounded-3xl space-y-4 flex flex-col justify-between shadow-[0_2px_16px_rgba(0,43,127,0.03)]">
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-blue-600 stroke-[2.2]" />
-                <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                  Commentaires &amp; Échanges
-                </h2>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#002B7F]">
+                Commentaires &amp; Échanges
+              </h2>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E8F1FF] text-[#002B7F]">
                 {commentaires.length} message{commentaires.length > 1 ? 's' : ''}
               </span>
             </div>
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
               {commentaires.length === 0 ? (
-                <div className="p-6 text-center text-slate-400 text-xs font-medium">
+                <div className="p-6 text-center text-slate-600 text-xs font-medium">
                   Aucun message pour le moment. Vous pouvez poser une question ci-dessous.
                 </div>
               ) : (
@@ -726,30 +661,30 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                   return (
                     <div
                       key={com.id}
-                      className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
+                      className={`p-3.5 rounded-2xl text-xs space-y-1.5 ${
                         isTech
-                          ? 'bg-blue-50/60 border-blue-200/70 text-slate-900'
-                          : 'bg-slate-50/80 border-slate-200/80 text-slate-900'
+                          ? 'bg-[#E8F1FF] text-slate-900'
+                          : 'bg-slate-50 text-slate-900'
                       }`}
                     >
                       <div className="flex items-center justify-between text-[11px]">
                         <div className="flex items-center gap-1.5 font-bold">
                           <span className="text-slate-900">{com.auteur_details?.nom || `Utilisateur #${com.auteur}`}</span>
                           <span
-                            className={`px-1.5 py-0.2 rounded-md text-[10px] uppercase font-extrabold ${
+                            className={`px-1.5 py-0.2 rounded-md text-[10px] uppercase font-bold ${
                               isTech
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-orange-100 text-orange-800'
+                                ? 'bg-[#E8F1FF] text-[#002B7F]'
+                                : 'bg-slate-100 text-slate-600'
                             }`}
                           >
                             {isTech ? 'Technicien' : 'Demandeur'}
                           </span>
                         </div>
-                        <span className="text-slate-500 text-[10px] font-medium">
+                        <span className="text-slate-600 text-[10px] font-medium">
                           {formatDateTime(com.date_creation)}
                         </span>
                       </div>
-                      <p className="text-slate-800 font-medium leading-relaxed whitespace-pre-wrap">
+                      <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
                         {com.contenu}
                       </p>
                     </div>
@@ -767,39 +702,33 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
               value={nouveauCommentaire}
               onChange={(e) => setNouveauCommentaire(e.target.value)}
               disabled={sendingComment}
-              className="flex-1 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+              className="flex-1 bg-slate-50 hover:bg-slate-100/70 border border-slate-100 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#B3D1FF] transition-all font-medium"
             />
             <button
               type="submit"
               disabled={!nouveauCommentaire.trim() || sendingComment}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shrink-0 cursor-pointer shadow-xs disabled:opacity-50 transition-all active:scale-95"
+              className="bg-[#002B7F] hover:bg-[#001F5C] text-white px-4 py-2.5 rounded-2xl text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50 transition-all active:scale-95 shadow-xs"
             >
-              {sendingComment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {sendingComment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Envoyer</span>}
             </button>
           </form>
         </div>
 
       </div>
 
-      {/* ========================================================
-          MODAL D'ANNULATION DE LA DEMANDE
-          ======================================================== */}
+      {/* MODAL D'ANNULATION */}
       {isCancelModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <Trash2 className="w-6 h-6" />
-            </div>
-
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] max-w-md w-full p-6 space-y-4 shadow-sm">
             <div className="space-y-1">
-              <h3 className="text-base font-extrabold text-slate-900">Annuler cette demande ?</h3>
-              <p className="text-xs text-slate-500 font-medium">
+              <h3 className="text-base font-bold text-[#0a1e42]">Annuler cette demande ?</h3>
+              <p className="text-xs text-[#475569] font-medium">
                 Cette action fermera définitivement le ticket #{demande.id}. Le support technique ne prendra plus en charge cette demande.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-600 uppercase">
+              <label className="text-[11px] font-bold text-[#475569] uppercase">
                 Motif de l&apos;annulation (facultatif)
               </label>
               <textarea
@@ -807,21 +736,21 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                 value={cancelMotif}
                 onChange={(e) => setCancelMotif(e.target.value)}
                 placeholder="Ex: Problème résolu par moi-même, fausse manipulation..."
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                className="w-full p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs text-[#0a1e42] focus:bg-white focus:outline-none focus:border-[#0b3b8f]"
               />
             </div>
 
             <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 onClick={() => setIsCancelModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-[#0a1e42] bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#0b3b8f]"
               >
                 Garder la demande
               </button>
               <button
                 onClick={handleConfirmCancel}
                 disabled={isCancelling}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold flex items-center gap-1.5"
               >
                 {isCancelling && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>Confirmer l&apos;annulation</span>
@@ -831,21 +760,16 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
         </div>
       )}
 
-      {/* ========================================================
-          MODAL DE MODIFICATION DE LA DEMANDE
-          ======================================================== */}
+      {/* MODAL DE MODIFICATION */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <form onSubmit={handleConfirmEdit} className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Pencil className="w-5 h-5 text-blue-600" />
-                <h3 className="text-base font-extrabold text-slate-900">Modifier ma demande</h3>
-              </div>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fade-in">
+          <form onSubmit={handleConfirmEdit} className="bg-white rounded-2xl border border-[#e2e8f0] max-w-lg w-full p-6 sm:p-7 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-[#e2e8f0] pb-3">
+              <h3 className="text-base font-bold text-[#0a1e42]">Modifier ma demande</h3>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                className="p-1 rounded-lg text-[#475569] hover:text-[#0a1e42] hover:bg-[#f8fafc]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -853,22 +777,22 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
 
             <div className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Objet de la demande</label>
+                <label className="font-bold text-[#0a1e42]">Objet de la demande</label>
                 <input
                   type="text"
                   value={editObjet}
                   onChange={(e) => setEditObjet(e.target.value)}
                   required
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full p-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs text-[#0a1e42] font-medium focus:bg-white focus:outline-none focus:border-[#0b3b8f]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Niveau d&apos;urgence</label>
+                <label className="font-bold text-[#0a1e42]">Niveau d&apos;urgence</label>
                 <select
                   value={editUrgence}
                   onChange={(e) => setEditUrgence(e.target.value as UrgenceLevel)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none"
+                  className="w-full p-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs font-bold text-[#0a1e42] focus:bg-white focus:outline-none"
                 >
                   <option value="faible">Faible (Pas de blocage)</option>
                   <option value="moyen">Moyenne (Gênant pour le travail)</option>
@@ -877,41 +801,101 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Description détaillée</label>
+                <label className="font-bold text-[#0a1e42]">Description détaillée</label>
                 <textarea
                   rows={4}
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   required
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full p-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs text-[#0a1e42] font-medium focus:bg-white focus:outline-none focus:border-[#0b3b8f]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Remplacer la pièce jointe (optionnel)</label>
+                <label className="font-bold text-[#0a1e42]">Remplacer la pièce jointe (optionnel)</label>
                 <input
                   type="file"
                   onChange={(e) => setEditFile(e.target.files?.[0] || null)}
-                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                  className="w-full text-xs text-[#475569] file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#eef4ff] file:text-[#0b3b8f] hover:file:bg-blue-100 cursor-pointer"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#e2e8f0]">
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-[#0a1e42] bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#0b3b8f]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={isUpdating}
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-md shadow-blue-600/20 flex items-center gap-1.5"
+                className="px-5 py-2 rounded-xl bg-[#FF5E00] hover:bg-[#E05200] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs"
               >
                 {isUpdating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>Enregistrer les modifications</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL DE RÉOUVERTURE DU TICKET */}
+      {isReopenModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
+          <form
+            onSubmit={handleConfirmReopen}
+            className="w-full max-w-lg bg-white rounded-3xl border border-slate-100 shadow-[0_10px_40px_rgba(0,43,127,0.1)] p-6 sm:p-7 space-y-5"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-black text-[#071530]">
+                  Rouvrir le ticket {demande.reference || `#DEM-${demande.id}`}
+                </h3>
+                <p className="text-[11px] text-[#475569]">
+                  Le ticket repassera en cours auprès de l&apos;équipe technique.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReopenModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
+                Motif de la réouverture *
+              </label>
+              <textarea
+                rows={4}
+                required
+                value={reopenMotif}
+                onChange={(e) => setReopenMotif(e.target.value)}
+                placeholder="Expliquez ce qui ne fonctionne toujours pas ou pourquoi le problème persiste..."
+                className="w-full p-3.5 bg-[#F4F7FB] border border-slate-100 rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:bg-white focus:outline-none focus:border-[#B3D1FF] transition-all font-medium"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsReopenModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#475569] bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={isReopening || !reopenMotif.trim()}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-60"
+              >
+                {isReopening && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Confirmer la réouverture</span>
               </button>
             </div>
           </form>

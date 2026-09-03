@@ -9,17 +9,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { demandeService } from '@/services/demande.service';
 import { Categorie, UrgenceLevel } from '@/types/demande';
 import { 
-  AlertCircle, 
-  CheckCircle2, 
-  Paperclip, 
-  FileText, 
-  X, 
-  ArrowLeft,
-  Shield,
-  Zap,
-  Flame,
-  Send,
-  Pencil
+  X
 } from 'lucide-react';
 
 export function NouvelleDemandeForm() {
@@ -167,49 +157,56 @@ export function NouvelleDemandeForm() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/demandes"
-              className="w-8 h-8 rounded-xl astra-card hover:border-blue-300 flex items-center justify-center text-slate-600 hover:text-blue-600 transition-colors shadow-2xs"
+              className="text-xs font-bold text-[#002B7F] hover:underline"
             >
-              <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+              &larr; Retour
             </Link>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Nouvelle demande
             </h1>
           </div>
-          <p className="text-xs text-slate-500 font-medium mt-1 pl-10">
+          <p className="text-xs text-slate-500 font-medium mt-1">
             Déposez votre ticket auprès du service technique.
           </p>
         </div>
       </div>
 
+      {/* Conseil d'assistance préalable pour limiter les demandes inutiles */}
+      <div className="p-3.5 rounded-2xl bg-[#E8F1FF] border border-[#B3D1FF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <span className="font-medium text-[#1E293B]">
+          Un souci courant (App Repas, double écran, Wi-Fi...) ? Consultez la fiche d&apos;assistance pour le résoudre en autonomie.
+        </span>
+        <Link
+          href="/aide"
+          className="shrink-0 px-3 py-1.5 rounded-xl bg-white border border-[#B3D1FF] text-[#002B7F] font-bold hover:bg-white/80 transition-colors shadow-2xs text-center"
+        >
+          Consulter la fiche &rarr;
+        </Link>
+      </div>
+
       {/* Bannière de succès */}
       {isSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 text-emerald-900 shadow-xs animate-in fade-in">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <p className="font-bold text-sm">Demande enregistrée avec succès !</p>
-            <p className="text-xs text-emerald-700">Votre demande a été transmise aux techniciens. Redirection en cours...</p>
-          </div>
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 shadow-xs animate-in fade-in">
+          <p className="font-bold text-sm">Demande enregistrée avec succès !</p>
+          <p className="text-xs text-emerald-700">Votre demande a été transmise aux techniciens. Redirection en cours...</p>
         </div>
       )}
 
       {/* Bannière d'erreur */}
       {serverError && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-center gap-3 text-rose-900">
-          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900">
           <p className="text-xs font-bold">{serverError}</p>
         </div>
       )}
 
       {/* Formulaire Principal ou Récapitulatif */}
       {!showRecap ? (
-        <div className="p-6 sm:p-8 astra-card rounded-3xl space-y-6">
+        <div className="p-6 sm:p-8 bg-white border border-slate-100 shadow-[0_4px_24px_rgba(0,43,127,0.03)] rounded-3xl space-y-6">
           <form onSubmit={handleGoToRecap} className="space-y-6">
             
             {/* 1. OBJET */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
                 Objet de la demande *
               </label>
               <Input
@@ -226,7 +223,7 @@ export function NouvelleDemandeForm() {
               
               {/* Catégorie */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
                   Catégorie *
                 </label>
                 <Select
@@ -241,7 +238,7 @@ export function NouvelleDemandeForm() {
 
               {/* Urgence */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
                   Niveau d&apos;urgence *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -250,13 +247,12 @@ export function NouvelleDemandeForm() {
                   <button
                     type="button"
                     onClick={() => setUrgence('faible')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
                       urgence === 'faible'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-blue-50/50'
+                        ? 'bg-[#E8F1FF] text-[#002B7F] border-[#B3D1FF]'
+                        : 'bg-slate-50 border-slate-100 text-[#1E293B] hover:bg-slate-100/70'
                     }`}
                   >
-                    <Shield className="w-3.5 h-3.5" />
                     <span>Faible</span>
                   </button>
 
@@ -264,13 +260,12 @@ export function NouvelleDemandeForm() {
                   <button
                     type="button"
                     onClick={() => setUrgence('moyen')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
                       urgence === 'moyen'
-                        ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-amber-50/50'
+                        ? 'bg-amber-50 text-amber-900 border-amber-200'
+                        : 'bg-slate-50 border-slate-100 text-[#1E293B] hover:bg-slate-100/70'
                     }`}
                   >
-                    <Zap className="w-3.5 h-3.5" />
                     <span>Moyenne</span>
                   </button>
 
@@ -278,16 +273,14 @@ export function NouvelleDemandeForm() {
                   <button
                     type="button"
                     onClick={() => setUrgence('eleve')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
                       urgence === 'eleve'
-                        ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-rose-50/50'
+                        ? 'bg-rose-50 text-rose-900 border-rose-200'
+                        : 'bg-slate-50 border-slate-100 text-[#1E293B] hover:bg-slate-100/70'
                     }`}
                   >
-                    <Flame className="w-3.5 h-3.5" />
-                    <span>Haute</span>
+                    <span>Élevée</span>
                   </button>
-
                 </div>
               </div>
 
@@ -295,8 +288,8 @@ export function NouvelleDemandeForm() {
 
             {/* Précision si 'Autre' */}
             {isAutreSelected() && (
-              <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1.5 animate-in fade-in">
-                <label className="block text-xs font-bold text-amber-900 uppercase tracking-wider">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5 animate-in fade-in">
+                <label className="block text-xs font-bold text-[#002B7F] uppercase tracking-wider">
                   Précisez votre besoin *
                 </label>
                 <Input
@@ -309,14 +302,14 @@ export function NouvelleDemandeForm() {
               </div>
             )}
 
-            {/* 3. DESCRIPTION */}
+            {/* 3. DESCRIPTION DÉTAILLÉE */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Description détaillée *
+              <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
+                Description détaillée du problème *
               </label>
               <Textarea
-                rows={5}
-                placeholder="Expliquez ce qui se passe, les circonstances du problème, les messages d'erreur éventuels..."
+                rows={4}
+                placeholder="Précisez les symptômes constatés, les messages d'erreur éventuels..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 error={errors.description}
@@ -338,22 +331,18 @@ export function NouvelleDemandeForm() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-dashed border-slate-300 hover:border-blue-400 bg-white/80 hover:bg-white text-xs font-bold text-slate-700 hover:text-blue-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-slate-200 hover:border-[#002B7F] bg-slate-50/70 hover:bg-[#E8F1FF] text-xs font-bold text-[#002B7F] transition-colors cursor-pointer"
                 >
-                  <Paperclip className="w-4 h-4 text-blue-600" />
                   <span>Joindre une capture d&apos;écran ou un fichier (optionnel)</span>
                 </button>
               ) : (
-                <div className="inline-flex items-center gap-3 p-2.5 px-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl text-xs">
-                  <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <span className="font-bold text-slate-900 truncate max-w-xs">{pieceJointe.name}</span>
-                  <span className="text-[11px] text-slate-500 font-medium">({(pieceJointe.size / 1024).toFixed(1)} Ko)</span>
+                <div className="inline-flex items-center gap-3 p-2.5 px-3.5 bg-[#E8F1FF] border border-[#B3D1FF] rounded-xl text-xs">
+                  <span className="font-bold text-[#071530] truncate max-w-xs">{pieceJointe.name}</span>
+                  <span className="text-[11px] text-[#475569] font-medium">({(pieceJointe.size / 1024).toFixed(1)} Ko)</span>
                   <button
                     type="button"
                     onClick={removeFile}
-                    className="p-1 hover:bg-rose-100 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                    className="p-1 hover:bg-rose-100 text-[#071530] hover:text-rose-700 rounded-lg transition-colors cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -364,14 +353,13 @@ export function NouvelleDemandeForm() {
               )}
             </div>
 
-            {/* 5. BOUTON ACTION */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
+            {/* 5. BOUTON ACTION UNIQUE : Orange #FF5E00 */}
+            <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-end">
               <button
                 type="submit"
-                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-bold shadow-md shadow-orange-500/25 hover:shadow-lg active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                className="px-6 py-3 bg-[#FF5E00] hover:bg-[#E05200] text-white rounded-xl text-xs font-black active:scale-95 transition-all cursor-pointer shadow-md"
               >
                 <span>Vérifier et Envoyer</span>
-                <Send className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
             </div>
 
@@ -379,72 +367,72 @@ export function NouvelleDemandeForm() {
         </div>
       ) : (
         /* VUE RÉCAPITULATIF */
-        <div className="p-6 sm:p-8 astra-card rounded-3xl space-y-6 animate-in fade-in">
-          <div className="pb-3 border-b border-slate-100">
-            <h2 className="text-base font-extrabold text-slate-900">
+        <div className="p-6 sm:p-8 bg-white border border-[#CBD5E1] rounded-2xl shadow-xs space-y-6 animate-in fade-in">
+          <div className="pb-3 border-b border-[#E2E8F0]">
+            <h2 className="text-base font-black text-[#002B7F]">
               Vérification de votre demande
             </h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-[#1E293B] font-semibold mt-0.5">
               Assurez-vous que les informations sont exactes avant transmission.
             </p>
           </div>
 
           <div className="space-y-4 text-xs">
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-              <span className="text-slate-500 font-bold uppercase text-[10px] block">Objet</span>
-              <p className="text-sm font-extrabold text-slate-900">{objet}</p>
+            <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] space-y-1">
+              <span className="text-[#002B7F] font-bold uppercase text-[10px] block">Objet</span>
+              <p className="text-sm font-black text-[#071530]">{objet}</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-                <span className="text-slate-500 font-bold uppercase text-[10px] block">Catégorie</span>
-                <p className="text-xs font-bold text-slate-900">
+              <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] space-y-1">
+                <span className="text-[#002B7F] font-bold uppercase text-[10px] block">Catégorie</span>
+                <p className="text-xs font-bold text-[#071530]">
                   {selectedCategorieObj?.libelle || 'Non renseignée'}
                   {isAutreSelected() && autreCategoriePrecision && ` (${autreCategoriePrecision})`}
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-                <span className="text-slate-500 font-bold uppercase text-[10px] block">Urgence</span>
-                <p className={`text-xs font-extrabold ${urgence === 'eleve' ? 'text-rose-600' : urgence === 'moyen' ? 'text-amber-600' : 'text-blue-700'}`}>
+              <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] space-y-1">
+                <span className="text-[#002B7F] font-bold uppercase text-[10px] block">Urgence</span>
+                <p className={`text-xs font-black ${urgence === 'eleve' ? 'text-rose-700' : urgence === 'moyen' ? 'text-amber-700' : 'text-[#002B7F]'}`}>
                   {urgenceLabel}
                 </p>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-              <span className="text-slate-500 font-bold uppercase text-[10px] block">Description</span>
-              <p className="text-xs text-slate-800 font-medium whitespace-pre-wrap leading-relaxed bg-white p-3 rounded-xl border border-slate-200">
+            <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] space-y-1">
+              <span className="text-[#002B7F] font-bold uppercase text-[10px] block">Description</span>
+              <p className="text-xs text-[#071530] font-medium whitespace-pre-wrap leading-relaxed bg-[#F0F6FF] p-3 rounded-xl border border-[#B3D1FF]">
                 {description}
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between">
-              <span className="text-slate-500 font-bold uppercase text-[10px]">Pièce jointe</span>
-              <span className="text-slate-900 font-bold">
+            <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] flex items-center justify-between">
+              <span className="text-[#002B7F] font-bold uppercase text-[10px]">Pièce jointe</span>
+              <span className="text-[#071530] font-bold">
                 {pieceJointe ? pieceJointe.name : 'Aucun fichier joint'}
               </span>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+          <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between gap-3">
+            {/* Bouton secondaire */}
             <button
               type="button"
               onClick={() => setShowRecap(false)}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              className="inline-flex items-center px-4 py-2.5 rounded-xl bg-white border border-[#CBD5E1] text-xs font-bold text-[#002B7F] hover:bg-[#E8F1FF] hover:border-[#002B7F] transition-colors cursor-pointer shadow-xs"
             >
-              <Pencil className="w-3.5 h-3.5" />
               <span>Modifier</span>
             </button>
 
+            {/* Action principale unique */}
             <button
               type="button"
               onClick={handleFinalSubmit}
               disabled={isSubmitting}
-              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-bold shadow-md shadow-orange-500/25 hover:shadow-lg active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+              className="px-6 py-3 bg-[#FF5E00] hover:bg-[#E05200] text-white rounded-xl text-xs font-black active:scale-95 transition-all cursor-pointer shadow-md"
             >
-              <Send className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>{isSubmitting ? 'Envoi en cours...' : 'Envoyer la demande'}</span>
             </button>
           </div>

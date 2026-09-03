@@ -2,60 +2,107 @@
 
 @theme {
   /* ==========================================================================
-     PALETTE DE COULEURS DU PROJET (Bleu & Orange Astra Harmony)
+     PALETTE DEEP-TECHNOLOGIES HAUTE LUMINOSITÉ (Bleu Roi dominant + Orange Vif)
      ========================================================================== */
 
-  /* 🔹 Couleur Principale / Marque (Bleu Royal) */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #eff6ff;
+  /* 🔹 Bleu Roi Électrique & Dominant (#002B7F / #0038A8) */
+  --color-blue-primary: #002b7f;
+  --color-blue-primary-hover: #001f5c;
+  --color-blue-secondary: #0047cc;
+  --color-blue-bg: #e8f1ff;
+  --color-blue-border: #b3d1ff;
 
-  /* 🔸 Couleur d'Accent & Action (Orange Chaleureux) */
-  --color-accent: #f97316;
-  --color-accent-hover: #ea580c;
-  --color-accent-light: #fff7ed;
+  /* 🔸 Orange Vif Énergique de l'Affiche (#FF5E00) */
+  --color-action-primary: #ff5e00;
+  --color-action-primary-hover: #e05200;
+  --color-orange-bg: #fff0e6;
+  --color-orange-border: #ffd1b3;
 
-  /* 🔹 Couleurs de Statut & Priorité */
-  --color-status-success: #10b981;
-  --color-status-warning: #f59e0b;
-  --color-status-danger: #ef4444;
-  --color-status-info: #0ea5e9;
+  /* ⚪ Fond de Page Doux & Reposant & Cartes Blanc Pur */
+  --color-bg-page: #f4f7fb;         /* Fond gris-bleuté très doux et aéré */
+  --color-bg-surface: #ffffff;      /* Blanc pur pour toutes les cartes */
+  
+  /* 🔹 Boutons secondaires & surfaces interactives */
+  --color-btn-sec-bg: #ffffff;
+  --color-btn-sec-border: #e2e8f0;
+  --color-btn-sec-text: #071530;
 
-  /* 🔹 Arrière-plans & Surfaces */
-  --color-bg-page: #f0f4f9;
-  --color-bg-surface: #ffffff;
-  --color-bg-subtle: #f8fafc;
+  /* 🔹 Typographie Noire/Bleutée Ultra-Lisible & Contrastée */
+  --color-text-main: #071530;       /* Noir bleuté profond ultra-net */
+  --color-text-secondary: #1e293b;  /* Ardoise foncé très lisible */
+  --color-text-muted: #475569;
 
-  /* 🔹 Typographie Haute Netteté */
-  --color-text-main: #020617;
-  --color-text-muted: #334155;
-
-  /* 🔹 Bordures */
-  --color-border-default: #e2e8f0;
-  --color-border-hover: #cbd5e1;
+  /* 🔹 Bordures douces, fines et soyeuses */
+  --color-border-default: #f1f5f9;
 }
 
-/* Couleur de bordure par défaut */
+/* ==========================================================================
+   STYLES GLOBAUX DE L'APPLICATION
+   ========================================================================== */
+
+/* Couleur de bordure par défaut appliquée à tous les éléments */
 * {
   border-color: var(--color-border-default);
 }
 
-/* Fond atmosphérique doux et typographie ultra-nette */
+/* Configuration du corps de page : fond, couleur de texte et lissage de police */
 body {
-  background: linear-gradient(135deg, #eaf0f8 0%, #f1f5f9 50%, #e5eef8 100%);
-  background-attachment: fixed;
+  background-color: var(--color-bg-page);
   color: var(--color-text-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  min-height: 100vh;
 }
 
+/* ==========================================================================
+   TRANSITIONS & MICRO-INTERACTIONS COHÉRENTES
+   ========================================================================== */
+
+/* Transitions douces pour tous les éléments interactifs */
+button,
+a,
+input,
+select,
+textarea {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Effet de focus accessible et élégant */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Scrollbar personnalisée élégante */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-hover);
+  border-radius: var(--radius-md);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   UTILITAIRES D'ANIMATION
+   ========================================================================== */
+
+/* Animation d'apparition douce */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -63,42 +110,129 @@ body {
   }
 }
 
-@keyframes floatSoft {
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Animation de slide-in */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Animation de scale-in */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Animation de pulse subtile */
+@keyframes pulse {
   0%, 100% {
-    transform: translateY(0);
+    opacity: 1;
   }
   50% {
-    transform: translateY(-4px);
+    opacity: 0.7;
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-pulse-slow {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.animate-float {
-  animation: floatSoft 3s ease-in-out infinite;
+/* ==========================================================================
+   UTILITAIRES DE LAYOUT
+   ========================================================================== */
+
+/* Container avec largeur maximale centrée */
+.container-responsive {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
-/* Barre latérale totalement transparente (Sans aucune couleur de fond) */
-.astra-sidebar-gradient {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+@media (min-width: 640px) {
+  .container-responsive {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
 
-/* Pilule active flottante */
-.astra-active-pill {
-  background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-  color: #2563eb !important;
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
-/* Carte épurée */
-.astra-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+/* ==========================================================================
+   EFFETS DE CARTE
+   ========================================================================== */
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ==========================================================================
+   STYLES D'IMPRESSION & EXPORT PDF OFFICIEL (@media print)
+   ========================================================================== */
+
+@media print {
+  header,
+  nav,
+  aside,
+  button,
+  form,
+  input,
+  textarea,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-header {
+    display: block !important;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #002b7f;
+    padding-bottom: 10px;
+  }
+
+  .astra-card,
+  div[class*="rounded-"],
+  div[class*="border"] {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    break-inside: avoid;
+  }
+}
+

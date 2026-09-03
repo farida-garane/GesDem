@@ -91,17 +91,17 @@ class ApiClient {
     });
   }
 
-  put<T>(endpoint: string, body?: unknown): Promise<T> {
+  put<T>(endpoint: string, body?: unknown, isFormData = false): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: JSON.stringify(body),
+      body: isFormData ? (body as BodyInit) : JSON.stringify(body),
     });
   }
 
-  patch<T>(endpoint: string, body?: unknown): Promise<T> {
+  patch<T>(endpoint: string, body?: unknown, isFormData = false): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PATCH',
-      body: JSON.stringify(body),
+      body: isFormData ? (body as BodyInit) : JSON.stringify(body),
     });
   }
 

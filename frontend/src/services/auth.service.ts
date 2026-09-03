@@ -40,6 +40,16 @@ export const authService = {
     return api.get<User[]>('/api/accounts/users/');
   },
 
+  async createUser(payload: RegisterPayload): Promise<User> {
+    return api.post<User>('/api/accounts/register/', {
+      username: payload.nom,
+      email: payload.email,
+      password: payload.password,
+      departement: payload.departement,
+      role: payload.role || 'demandeur',
+    });
+  },
+
   async updateUserRole(userId: number, payload: UpdateUserRolePayload): Promise<User> {
     return api.patch<User>(`/api/accounts/users/${userId}/`, payload);
   },

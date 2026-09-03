@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { Layers, Eye, EyeOff, ArrowRight, ShieldAlert, User as UserIcon } from 'lucide-react';
+import { Wrench, Eye, EyeOff, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
-export default function LoginCollaborateurPage() {
+export default function LoginIntervenantPage() {
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +24,7 @@ export default function LoginCollaborateurPage() {
     setIsLoading(true);
 
     try {
-      await login({ username, password }, 'demandeur');
+      await login({ username, password }, 'technicien');
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -39,7 +39,7 @@ export default function LoginCollaborateurPage() {
   return (
     <div className="bg-white rounded-3xl border border-slate-100/90 p-7 sm:p-9 shadow-[0_4px_30px_rgba(0,43,127,0.04)] space-y-6 max-w-md w-full mx-auto animate-fade-in">
       
-      {/* En-tête Collaborateur */}
+      {/* En-tête Intervenant */}
       <div className="text-center space-y-2">
         <div className="space-y-1">
           <div className="flex items-center justify-center gap-2">
@@ -47,11 +47,11 @@ export default function LoginCollaborateurPage() {
               Dem<span className="text-[#FF5E00]">Ops</span>
             </h1>
             <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-[#E8F1FF] text-[#002B7F] rounded-lg">
-              Collaborateur
+              Intervenant
             </span>
           </div>
           <p className="text-xs text-[#475569] font-medium">
-            Connectez-vous pour faire vos demandes et suivre leur traitement
+            Support — Traitement &amp; Résolution des requêtes
           </p>
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function LoginCollaborateurPage() {
         {/* Champ Identifiant */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
-            Nom d&apos;utilisateur ou Email
+            Identifiant Intervenant ou Email
           </label>
           <input
             type="text"
@@ -75,7 +75,7 @@ export default function LoginCollaborateurPage() {
             onChange={(e) => setUsername(e.target.value)}
             required
             autoFocus
-            placeholder="Ex : prenom.nom ou email"
+            placeholder="Ex : identifiant.intervenant"
             disabled={isLoading}
             className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
           />
@@ -91,7 +91,7 @@ export default function LoginCollaborateurPage() {
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                alert("Veuillez vous rapprocher de l'administrateur pour réinitialiser votre mot de passe.");
+                alert("Veuillez vous rapprocher de l'administrateur pour réinitialiser vos accès intervenant.");
               }}
               className="text-xs font-bold text-[#002B7F] hover:underline"
             >
@@ -115,17 +115,14 @@ export default function LoginCollaborateurPage() {
             disabled={isLoading}
             className="w-full py-3.5 px-6 rounded-2xl bg-[#FF5E00] hover:bg-[#E05200] text-white font-black text-xs sm:text-sm transition-all flex items-center justify-center cursor-pointer disabled:opacity-60 active:scale-95 shadow-md"
           >
-            <span>{isLoading ? 'Connexion en cours...' : 'Se connecter'}</span>
+            <span>{isLoading ? 'Vérification des accès...' : "Accéder à l'Espace Intervenant"}</span>
           </button>
         </div>
 
-        {/* Lien Inscription */}
+        {/* Note de sécurité */}
         <div className="text-center pt-3 border-t border-slate-100">
-          <p className="text-xs text-[#475569] font-medium">
-            Nouveau collaborateur ?{' '}
-            <Link href="/register" className="text-[#002B7F] font-black hover:underline">
-              Créer mon compte employé
-            </Link>
+          <p className="text-[11px] text-[#475569] font-medium">
+            Accès réservé aux gestionnaires de traitement habilités.
           </p>
         </div>
       </form>

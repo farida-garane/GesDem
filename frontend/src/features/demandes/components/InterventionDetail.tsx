@@ -3,31 +3,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
+import { SlaBadge } from '@/components/ui/SlaBadge';
 import { useAuth } from '@/context/AuthContext';
 import { demandeService } from '@/services/demande.service';
+import { escaladeService } from '@/services/escalade.service';
 import { Demande, Statut, HistoriqueStatut, Commentaire } from '@/types/demande';
+import { EscaladeExterne } from '@/types/escalade';
+import { EscaladeExterneModal } from '@/features/interventions/components/EscaladeExterneModal';
+import { JournalExterneSection } from '@/features/interventions/components/JournalExterneSection';
 import {
-  ArrowLeft,
-  Calendar,
-  User,
-  Phone,
-  Building2,
-  Paperclip,
-  Clock,
-  CheckCircle2,
-  Send,
   Loader2,
-  AlertCircle,
-  FileText,
-  UserCheck,
-  History,
-  MessageSquare,
-  Wrench,
-  Check,
-  Star,
-  ExternalLink,
-  Download,
-  Info,
   X
 } from 'lucide-react';
 
@@ -42,6 +27,7 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
   const [statuts, setStatuts] = useState<Statut[]>([]);
   const [historique, setHistorique] = useState<HistoriqueStatut[]>([]);
   const [commentaires, setCommentaires] = useState<Commentaire[]>([]);
+  const [escalades, setEscalades] = useState<EscaladeExterne[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +46,9 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
   const [updatingStatut, setUpdatingStatut] = useState(false);
   const [assigningSelf, setAssigningSelf] = useState(false);
 
+  // Modale d'Escalade vers Prestataire Externe
+  const [isEscaladeModalOpen, setIsEscaladeModalOpen] = useState(false);
+
   // Modale de Résolution & Décision
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
   const [noteResolution, setNoteResolution] = useState('');
@@ -75,17 +64,19 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
       setLoading(true);
       setError(null);
 
-      const [demandeData, statutsData, historiqueData, commentairesData] = await Promise.all([
+      const [demandeData, statutsData, historiqueData, commentairesData, escaladesData] = await Promise.all([
         demandeService.getDemandeById(demandeId),
         demandeService.getStatuts(),
         demandeService.getDemandeHistorique(demandeId),
         demandeService.getCommentaires(demandeId),
+        escaladeService.getEscalades(demandeId),
       ]);
 
       setDemande(demandeData);
       setStatuts(statutsData);
       setHistorique(historiqueData);
       setCommentaires(commentairesData);
+      setEscalades(escaladesData);
 
       if (demandeData?.note_resolution) {
         setNoteResolution(demandeData.note_resolution);
@@ -212,18 +203,14 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
   if (error || !demande) {
     return (
       <div className="p-8 max-w-xl mx-auto text-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mx-auto">
-          <AlertCircle className="w-6 h-6" />
-        </div>
         <div>
           <h2 className="text-base font-bold text-slate-900">Impossible de charger l&apos;intervention</h2>
           <p className="text-xs text-slate-500 mt-1">{error || 'Demande introuvable.'}</p>
         </div>
         <Link
           href="/interventions"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-black transition-colors"
+          className="inline-flex items-center px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-black transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
           <span>Retour à la liste</span>
         </Link>
       </div>
@@ -247,13 +234,6 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
               ? 'bg-rose-900 text-white border-rose-700'
               : 'bg-blue-900 text-white border-blue-700'
           }`}>
-            {toast.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            ) : toast.type === 'error' ? (
-              <AlertCircle className="w-4 h-4 text-rose-400" />
-            ) : (
-              <Info className="w-4 h-4 text-blue-400" />
-            )}
             <span>{toast.message}</span>
             <button onClick={() => setToast(null)} className="ml-2 text-white/70 hover:text-white">
               <X className="w-3.5 h-3.5" />
@@ -266,99 +246,63 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
       <div className="space-y-3">
         <Link
           href="/interventions"
-          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors group"
+          className="inline-flex items-center text-xs font-bold text-[#002B7F] hover:text-[#0047cc] transition-colors group"
         >
-          <div className="w-7 h-7 rounded-xl bg-white border border-slate-200 flex items-center justify-center group-hover:border-blue-300 shadow-2xs">
-            <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
-          </div>
-          <span>Retour aux interventions</span>
+          <span>&larr; Retour aux interventions</span>
         </Link>
 
-        {/* Titre & Badges */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-mono text-sm font-extrabold text-blue-700 bg-blue-50/90 px-3 py-0.5 rounded-lg border border-blue-200/60">
-                {demande.reference || `DEM-${String(demande.id).padStart(4, '0')}`}
-              </span>
-              <PriorityBadge urgence={demande.urgence} />
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-lg text-xs font-bold border shadow-2xs"
-                style={{
-                  backgroundColor: `${statutCouleur}15`,
-                  color: statutCouleur,
-                  borderColor: `${statutCouleur}40`,
-                }}
-              >
-                <span
-                  className="w-2 h-2 rounded-full animate-pulse"
-                  style={{ backgroundColor: statutCouleur }}
-                />
-                {statutLibelle}
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight pt-1">
-              {demande.objet}
-            </h1>
+      {/* Titre & Badges */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E2E8F0]">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="font-mono text-sm font-black text-[#002B7F] bg-[#E8F1FF] px-3 py-0.5 rounded-lg border border-[#B3D1FF]">
+              {demande.reference || `DEM-${String(demande.id).padStart(4, '0')}`}
+            </span>
+            <PriorityBadge urgence={demande.urgence} />
+            <SlaBadge demande={demande} />
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-lg text-xs font-black bg-[#E8F1FF] text-[#002B7F] border border-[#B3D1FF]">
+              <span className="w-2 h-2 rounded-full bg-[#002B7F]" />
+              {statutLibelle}
+            </span>
           </div>
 
-          <div className="text-right text-xs text-slate-500 font-medium hidden sm:block">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#002B7F] tracking-tight pt-1">
+            {demande.objet}
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="px-4 py-2 rounded-xl bg-[#002B7F] hover:bg-[#001f5c] text-white text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95"
+          >
+            <span>Imprimer la fiche PDF</span>
+          </button>
+
+          <div className="text-right text-xs text-[#1E293B] font-semibold hidden sm:block">
             <p>Créée le {formatDate(demande.date_creation)}</p>
             {demande.date_cloture && (
-              <p className="text-emerald-700 font-bold mt-0.5">
+              <p className="text-emerald-800 font-bold mt-0.5">
                 Clôturée le {formatDate(demande.date_cloture)}
               </p>
             )}
           </div>
         </div>
       </div>
+      </div>
 
-      {/* BLOC ÉVALUATION DU DEMANDEUR (Si déjà notée) */}
-      {demande.note_satisfaction && (
-        <div className="p-5 bg-gradient-to-r from-amber-500/10 via-amber-50 to-white border border-amber-200/90 rounded-3xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-              <h3 className="text-sm font-extrabold text-slate-900">
-                Avis du Collaborateur : {demande.note_satisfaction}/5 étoiles
-              </h3>
-            </div>
-            {demande.avis_satisfaction && (
-              <p className="text-xs text-slate-700 italic font-medium">
-                « {demande.avis_satisfaction} »
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={`w-5 h-5 ${
-                  star <= demande.note_satisfaction!
-                    ? 'text-amber-500 fill-amber-500'
-                    : 'text-slate-200'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Grille 2 Colonnes : Haut */}
+      {/* GRILLE PRINCIPALE DE L'INTERVENTION */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* BLOC 1 : Dossier technique & Demandeur (2 colonnes) */}
-        <div className="lg:col-span-2 p-6 sm:p-7 bg-white border border-slate-200/90 rounded-3xl space-y-6 shadow-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-600 stroke-[2.2]" />
-              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                Dossier &amp; Détail de la demande
-              </h2>
-            </div>
+        {/* BLOC 1 : Détails de la demande & Demandeur (2 colonnes) */}
+        <div className="lg:col-span-2 p-6 sm:p-7 bg-white border border-[#CBD5E1] rounded-2xl space-y-6 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
+            <h2 className="text-xs font-black uppercase tracking-wider text-[#002B7F]">
+              Dossier de Demande Initiale
+            </h2>
             {demande.categorie_details && (
-              <span className="text-xs font-bold px-3 py-0.5 rounded-lg bg-slate-100/90 text-slate-800 border border-slate-200">
+              <span className="text-xs font-bold px-3 py-0.5 rounded-lg bg-[#E8F1FF] text-[#002B7F] border border-[#B3D1FF]">
                 {demande.categorie_details.libelle}
               </span>
             )}
@@ -366,131 +310,62 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
 
           {/* Description */}
           <div className="space-y-2">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <p className="text-[11px] font-black text-[#002B7F] uppercase tracking-wider">
               Description formulée par le demandeur
             </p>
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 text-xs text-slate-900 leading-relaxed whitespace-pre-wrap font-medium">
+            <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] text-xs text-[#071530] leading-relaxed whitespace-pre-wrap font-semibold">
               {demande.description}
             </div>
           </div>
 
-          {/* Pièce jointe */}
-          {demande.piece_jointe && (
-            <div className="space-y-2">
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Pièce jointe fournie
-              </p>
-              <div className="inline-flex items-center gap-4 p-3.5 rounded-2xl border border-blue-200 bg-blue-50/40 shadow-2xs">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Paperclip className="w-5 h-5 stroke-[2.2]" />
-                </div>
-                <div className="overflow-hidden">
-                  <p className="text-xs font-extrabold text-slate-900 truncate max-w-xs">
-                    {demande.piece_jointe.split('/').pop()}
-                  </p>
-                  <div className="flex items-center gap-3 pt-1">
-                    <a
-                      href={demande.piece_jointe}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 hover:underline"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>Ouvrir l&apos;aperçu</span>
-                    </a>
-                    <a
-                      href={demande.piece_jointe}
-                      download
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-600 hover:text-orange-800 hover:underline"
-                    >
-                      <Download className="w-3 h-3" />
-                      <span>Télécharger</span>
-                    </a>
-                  </div>
-                </div>
+          {/* Demandeur */}
+          <div className="pt-2 border-t border-[#E2E8F0]">
+            <p className="text-[11px] font-black text-[#002B7F] uppercase tracking-wider mb-2">Demandeur</p>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[#CBD5E1]">
+              <div className="w-8 h-8 rounded-lg bg-[#E8F1FF] text-[#002B7F] flex items-center justify-center text-xs font-bold shrink-0">
+                {(demande.demandeur?.nom || demande.demandeur?.email || 'D').charAt(0).toUpperCase()}
+              </div>
+              <div className="text-xs">
+                <p className="font-bold text-[#071530]">{demande.demandeur?.nom || demande.demandeur?.email}</p>
+                <p className="text-[#1E293B] font-semibold">{demande.demandeur?.departement || 'Non renseigné'}</p>
               </div>
             </div>
-          )}
-
-          {/* Informations demandeur */}
-          <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
-                <User className="w-4 h-4 stroke-[2.2]" />
-              </div>
-              <div className="truncate">
-                <p className="text-[10px] uppercase font-bold text-slate-500">Demandeur</p>
-                <p className="text-xs font-extrabold text-slate-900 truncate">
-                  {demande.demandeur.nom || demande.demandeur.email}
-                </p>
-              </div>
-            </div>
-
-            {demande.demandeur.departement && (
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
-                  <Building2 className="w-4 h-4 stroke-[2.2]" />
-                </div>
-                <div className="truncate">
-                  <p className="text-[10px] uppercase font-bold text-slate-500">Département</p>
-                  <p className="text-xs font-extrabold text-slate-900 truncate">{demande.demandeur.departement}</p>
-                </div>
-              </div>
-            )}
-
-            {demande.demandeur.telephone && (
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
-                  <Phone className="w-4 h-4 stroke-[2.2]" />
-                </div>
-                <div className="truncate">
-                  <p className="text-[10px] uppercase font-bold text-slate-500">Contact</p>
-                  <p className="text-xs font-extrabold text-slate-900 truncate">{demande.demandeur.telephone}</p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* BLOC 2 : Contrôle Intervention (Intervenant & Statuts) (1 colonne) */}
-        <div className="p-6 sm:p-7 bg-white border border-slate-200/90 rounded-3xl space-y-6 flex flex-col justify-between shadow-xs">
-          <div className="space-y-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Wrench className="w-4 h-4 text-blue-600 stroke-[2.2]" />
-              <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                Gestion &amp; Traitement du Dossier
-              </h2>
-            </div>
+        {/* BLOC 2 : Actions & Prise en charge */}
+        <div className="p-6 sm:p-7 bg-white border border-[#CBD5E1] rounded-2xl space-y-6 shadow-xs">
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-wider text-[#002B7F] pb-3 border-b border-[#E2E8F0]">
+              Intervenant &amp; Traitement
+            </h2>
 
             {/* Intervenant assigné */}
-            <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Responsable du traitement
-              </p>
+            <div className="py-3">
               {demande.technicien ? (
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-blue-50/70 border border-blue-200/80">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#E8F1FF] border border-[#B3D1FF]">
+                  <div className="w-9 h-9 rounded-lg bg-[#002B7F] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                     {(demande.technicien.nom || demande.technicien.email || 'I').charAt(0).toUpperCase()}
                   </div>
                   <div className="truncate">
-                    <p className="text-xs font-black text-slate-900 truncate">
+                    <p className="text-xs font-bold text-[#071530] truncate">
                       {demande.technicien.nom || demande.technicien.email}
                     </p>
-                    <p className="text-[10px] font-bold text-orange-600">Intervenant en charge</p>
+                    <p className="text-[10px] font-bold text-[#002B7F]">Intervenant en charge</p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                  <div className="p-3 rounded-xl bg-[#E8F1FF] border border-[#B3D1FF] text-xs text-[#002B7F] font-bold">
                     <span>En attente de prise en charge par un intervenant.</span>
                   </div>
+                  {/* Action principale : Orange de l'affiche (#FF5E00) */}
                   <button
                     onClick={handleAssignToMe}
                     disabled={assigningSelf}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-black py-2.5 shadow-xs hover:shadow-md active:scale-98 transition-all cursor-pointer"
+                    className="w-full flex items-center justify-center bg-[#FF5E00] hover:bg-[#E05200] text-white rounded-xl text-xs font-black py-3 active:scale-95 transition-all cursor-pointer shadow-md"
                   >
-                    {assigningSelf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                    {assigningSelf && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
                     <span>Prendre en charge ce dossier</span>
                   </button>
                 </div>
@@ -498,8 +373,8 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
             </div>
 
             {/* Changement de statut de la demande par l'intervenant */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
+              <p className="text-[11px] font-black uppercase tracking-wider text-[#002B7F]">
                 Mettre à jour l&apos;état de la demande
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -513,12 +388,12 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
                       onClick={() => handleStatutChange(s.id)}
                       className={`px-3 py-2.5 rounded-xl text-xs font-bold border text-left flex items-center justify-between transition-all cursor-pointer ${
                         isActive
-                          ? 'border-blue-600 bg-blue-600 text-white shadow-xs'
-                          : 'border-slate-200 bg-slate-50 hover:bg-white hover:border-blue-300 text-slate-800'
+                          ? 'border-[#B3D1FF] bg-[#E8F1FF] text-[#002B7F]'
+                          : 'border-[#CBD5E1] bg-white hover:bg-[#F0F6FF] hover:border-[#002B7F] text-[#071530]'
                       }`}
                     >
                       <span className="truncate">{s.libelle}</span>
-                      {isActive && <Check className="w-3.5 h-3.5 shrink-0 ml-1 text-white stroke-[2.5]" />}
+                      {isActive && <span className="text-[#002B7F] font-bold ml-1">✓</span>}
                     </button>
                   );
                 })}
@@ -526,209 +401,224 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
             </div>
           </div>
 
-          {/* Action rapide : Finaliser / Clôturer avec note */}
-          {!isTermine && (
-            <div className="pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setIsResolutionModalOpen(true)}
-                disabled={updatingStatut}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold py-2.5 shadow-sm shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Valider le traitement / Résoudre</span>
-              </button>
-            </div>
-          )}
-        </div>
+        {/* Action rapide : Finaliser / Clôturer avec note */}
+        {!isTermine && (
+          <div className="pt-4 border-t border-[#e2e8f0] space-y-2">
+            <button
+              type="button"
+              onClick={() => setIsEscaladeModalOpen(true)}
+              className="w-full bg-[#002B7F] hover:bg-[#001f5c] text-white rounded-xl text-xs font-bold py-2.5 flex items-center justify-center active:scale-98 transition-all cursor-pointer shadow-sm"
+            >
+              <span>Déléguer / SAV Prestataire Externe</span>
+            </button>
 
+            <button
+              type="button"
+              onClick={() => setIsResolutionModalOpen(true)}
+              disabled={updatingStatut}
+              className="w-full bg-[#f26522] hover:bg-[#d94f0f] text-white rounded-xl text-xs font-bold py-2.5 flex items-center justify-center active:scale-98 transition-all cursor-pointer shadow-xs"
+            >
+              <span>Valider le traitement / Résoudre</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Grille 2 Colonnes : Bas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* BLOC 3 : Timeline & Historique des étapes */}
-        <div className="p-6 sm:p-7 bg-white border border-slate-200/90 rounded-3xl space-y-4 shadow-xs">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <History className="w-4 h-4 text-blue-600 stroke-[2.2]" />
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-              Timeline &amp; Historique des étapes
-            </h2>
-          </div>
+    </div>
 
-          {historique.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 text-xs font-medium">
-              Aucun changement de statut enregistré pour le moment.
-            </div>
-          ) : (
-            <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-blue-100">
-              {historique.map((item, idx) => (
-                <div key={item.id || idx} className="relative group">
-                  <span className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-white bg-blue-600 shadow-xs" />
-                  
-                  <div className="space-y-1">
-                    <p className="text-xs font-extrabold text-slate-900">
-                      Statut passé à :{' '}
-                      <span className="text-blue-700">
-                        {item.nouveau_statut?.libelle || 'Inconnu'}
-                      </span>
-                    </p>
-                    <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{formatDate(item.date_changement)}</span>
-                      {item.modifie_par && (
-                        <span>• par <strong className="text-slate-700">{item.modifie_par.nom || item.modifie_par.email}</strong></span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+    {/* BLOC PRESTATAIRE EXTERNE & JOURNAL DES TRANSACTIONS */}
+    <JournalExterneSection
+      escalades={escalades}
+      onRefresh={loadData}
+      canEdit={!isTermine}
+    />
+
+    {/* Grille 2 Colonnes : Bas */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      {/* BLOC 3 : Timeline & Historique des étapes */}
+      <div className="p-6 sm:p-7 bg-white border border-[#e2e8f0] rounded-2xl space-y-4 shadow-sm">
+        <div className="pb-3 border-b border-[#E2E8F0]">
+          <h2 className="text-xs font-black uppercase tracking-wider text-[#002B7F]">
+            Timeline &amp; Historique des étapes
+          </h2>
         </div>
 
-        {/* BLOC 4 : Journal d'échange & Commentaires */}
-        <div className="p-6 sm:p-7 bg-white border border-slate-200/90 rounded-3xl space-y-4 flex flex-col justify-between shadow-xs">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-blue-600 stroke-[2.2]" />
-                <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                  Journal de suivi &amp; Échanges
-                </h2>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
-                {commentaires.length} message{commentaires.length > 1 ? 's' : ''}
-              </span>
-            </div>
-
-            {/* Fil des messages */}
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {commentaires.length === 0 ? (
-                <div className="p-6 text-center text-slate-400 text-xs font-medium">
-                  Aucun message ou compte-rendu pour le moment.
+        {historique.length === 0 ? (
+          <div className="p-8 text-center text-[#1E293B] text-xs font-medium">
+            Aucun changement de statut enregistré pour le moment.
+          </div>
+        ) : (
+          <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#B3D1FF]">
+            {historique.map((item, idx) => (
+              <div key={item.id || idx} className="relative group">
+                <span className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-white bg-[#002B7F]" />
+                
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-[#071530]">
+                    Statut passé à :{' '}
+                    <span className="text-[#002B7F] font-black">
+                      {item.nouveau_statut?.libelle || 'Inconnu'}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-[#1E293B] font-semibold">
+                    <span>{formatDate(item.date_changement)}</span>
+                    {item.modifie_par && (
+                      <span> • par <strong className="text-[#071530]">{item.modifie_par.nom || item.modifie_par.email}</strong></span>
+                    )}
+                  </p>
                 </div>
-              ) : (
-                commentaires.map((com) => {
-                  const isAuthorTech = com.auteur_details?.role === 'technicien';
-                  return (
-                    <div
-                      key={com.id}
-                      className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
-                        isAuthorTech
-                          ? 'bg-blue-50/60 border-blue-200/70 text-slate-900'
-                          : 'bg-slate-50/80 border-slate-200/80 text-slate-900'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-[11px]">
-                        <div className="flex items-center gap-1.5 font-bold">
-                          <span className="text-slate-900">{com.auteur_details?.nom || `Utilisateur #${com.auteur}`}</span>
-                          <span
-                            className={`px-1.5 py-0.2 rounded-md text-[10px] uppercase font-extrabold ${
-                              isAuthorTech
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-orange-100 text-orange-800'
-                            }`}
-                          >
-                            {isAuthorTech ? 'Intervenant' : 'Demandeur'}
-                          </span>
-                        </div>
-                        <span className="text-slate-500 text-[10px] font-medium">
-                          {formatDate(com.date_creation)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* BLOC 4 : Journal d'échange & Commentaires */}
+      <div className="p-6 sm:p-7 bg-white border border-[#CBD5E1] rounded-2xl space-y-4 flex flex-col justify-between shadow-xs">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
+            <h2 className="text-xs font-black uppercase tracking-wider text-[#002B7F]">
+              Journal de suivi &amp; Échanges
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E8F1FF] text-[#002B7F] border border-[#B3D1FF]">
+              {commentaires.length} message{commentaires.length > 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Fil des messages */}
+          <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+            {commentaires.length === 0 ? (
+              <div className="p-6 text-center text-[#1E293B] text-xs font-medium">
+                Aucun message ou compte-rendu pour le moment.
+              </div>
+            ) : (
+              commentaires.map((com) => {
+                const isAuthorTech = com.auteur_details?.role === 'technicien';
+                return (
+                  <div
+                    key={com.id}
+                    className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
+                      isAuthorTech
+                        ? 'bg-[#E8F1FF] border-[#B3D1FF] text-[#071530]'
+                        : 'bg-white border-[#CBD5E1] text-[#071530]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px]">
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <span className="text-[#071530]">{com.auteur_details?.nom || `Utilisateur #${com.auteur}`}</span>
+                        <span
+                          className={`px-1.5 py-0.2 rounded-md text-[10px] uppercase font-bold ${
+                            isAuthorTech
+                              ? 'bg-[#E8F1FF] text-[#002B7F] border border-[#B3D1FF]'
+                              : 'bg-[#F0F6FF] text-[#002B7F] border border-[#B3D1FF]'
+                          }`}
+                        >
+                          {isAuthorTech ? 'Intervenant' : 'Demandeur'}
                         </span>
                       </div>
-                      <p className="text-slate-800 font-medium leading-relaxed whitespace-pre-wrap">
-                        {com.contenu}
-                      </p>
+                      <span className="text-[#1E293B] text-[10px] font-semibold">
+                        {formatDate(com.date_creation)}
+                      </span>
                     </div>
-                  );
-                })
-              )}
-            </div>
+                    <p className="text-[#071530] font-medium leading-relaxed whitespace-pre-wrap">
+                      {com.contenu}
+                    </p>
+                  </div>
+                );
+              })
+            )}
           </div>
-
-          {/* Formulaire d'envoi de message */}
-          <form onSubmit={handleSendComment} className="pt-3 border-t border-slate-100 flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Écrire un compte-rendu ou une réponse pour le demandeur..."
-              value={nouveauCommentaire}
-              onChange={(e) => setNouveauCommentaire(e.target.value)}
-              disabled={sendingComment}
-              className="flex-1 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-            />
-            <button
-              type="submit"
-              disabled={!nouveauCommentaire.trim() || sendingComment}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shrink-0 cursor-pointer shadow-xs disabled:opacity-50 transition-all active:scale-95"
-            >
-              {sendingComment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            </button>
-          </form>
         </div>
 
+        {/* Formulaire d'envoi de message */}
+        <form onSubmit={handleSendComment} className="pt-3 border-t border-[#E2E8F0] flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Écrire un compte-rendu ou une réponse pour le demandeur..."
+            value={nouveauCommentaire}
+            onChange={(e) => setNouveauCommentaire(e.target.value)}
+            disabled={sendingComment}
+            className="flex-1 bg-white hover:bg-[#F0F6FF] border border-[#CBD5E1] rounded-xl px-3.5 py-2.5 text-xs text-[#071530] placeholder-[#64748b] focus:outline-none focus:bg-white focus:border-[#002B7F] transition-all font-semibold"
+          />
+          <button
+            type="submit"
+            disabled={!nouveauCommentaire.trim() || sendingComment}
+            className="bg-[#002B7F] hover:bg-[#001F5C] text-white px-4 py-2.5 rounded-xl text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50 transition-all active:scale-95 shadow-xs"
+          >
+            {sendingComment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Envoyer</span>}
+          </button>
+        </form>
       </div>
 
-      {/* ========================================================
-          MODALE DE DÉCISION & RÉSOLUTION DU DOSSIER
-          ======================================================== */}
-      {isResolutionModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <form onSubmit={handleConfirmResolution} className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-extrabold text-slate-900">
-                  Validation du traitement du dossier
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsResolutionModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+    </div>
 
-            <p className="text-xs text-slate-500 font-medium">
-              Veuillez renseigner la décision, les actions réalisées ou la réponse finale apportée au demandeur (ex: commande effectuée, document transmis, intervention d&apos;un prestataire externe).
-            </p>
+    {/* MODALE DE DÉCISION & RÉSOLUTION */}
+    {isResolutionModalOpen && (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fade-in">
+        <form onSubmit={handleConfirmResolution} className="bg-white rounded-2xl border border-[#CBD5E1] max-w-lg w-full p-6 sm:p-7 space-y-4 shadow-lg">
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+            <h3 className="text-base font-black text-[#002B7F]">
+              Validation du traitement du dossier
+            </h3>
+            <button
+              type="button"
+              onClick={() => setIsResolutionModalOpen(false)}
+              className="p-1 rounded-lg text-[#1E293B] hover:text-[#071530] hover:bg-[#F0F6FF]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-700 uppercase">
-                Compte-rendu de décision / Note de résolution
-              </label>
-              <textarea
-                rows={4}
-                value={noteResolution}
-                onChange={(e) => setNoteResolution(e.target.value)}
-                placeholder="Ex: Demande validée par la Direction. Le matériel a été commandé auprès de notre fournisseur avec livraison prévue vendredi matin..."
-                required
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              />
-            </div>
+          <p className="text-xs text-[#1E293B] font-semibold">
+            Veuillez renseigner la décision, les actions réalisées ou la réponse finale apportée au demandeur.
+          </p>
 
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setIsResolutionModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmittingResolution}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-              >
-                {isSubmittingResolution && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Valider et clôturer le dossier</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-black text-[#002B7F] uppercase">
+              Compte-rendu de décision / Note de résolution
+            </label>
+            <textarea
+              rows={4}
+              value={noteResolution}
+              onChange={(e) => setNoteResolution(e.target.value)}
+              placeholder="Ex: Demande validée par la Direction. Le matériel a été commandé auprès de notre fournisseur..."
+              required
+              className="w-full p-3 bg-white border border-[#CBD5E1] rounded-xl text-xs text-[#071530] font-medium focus:bg-white focus:outline-none focus:border-[#002B7F]"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#E2E8F0]">
+            <button
+              type="button"
+              onClick={() => setIsResolutionModalOpen(false)}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-[#002B7F] bg-white border border-[#CBD5E1] hover:bg-[#E8F1FF]"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmittingResolution}
+              className="px-6 py-2.5 rounded-xl bg-[#FF5E00] hover:bg-[#E05200] text-white text-xs font-black flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-md"
+            >
+              {isSubmittingResolution && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>Valider et clôturer le dossier</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    )}
+
+    {/* MODALE D'ESCALADE VERS PRESTATAIRE EXTERNE */}
+    {demande && (
+      <EscaladeExterneModal
+        isOpen={isEscaladeModalOpen}
+        onClose={() => setIsEscaladeModalOpen(false)}
+        demandeId={demande.id}
+        demandeRef={demande.reference || `DEM-${demande.id}`}
+        onSuccess={loadData}
+      />
+    )}
 
     </div>
   );

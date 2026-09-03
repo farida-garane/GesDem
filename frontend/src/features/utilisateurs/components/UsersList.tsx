@@ -1,27 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Select } from '@/components/ui/Select';
-import { UserRoleModal } from './UserRoleModal';
+import Link from 'next/link';
+import {
+  Loader2
+} from 'lucide-react';
 import { authService } from '@/services/auth.service';
 import { User, UserRole } from '@/types/user';
-import {
-  Users,
-  Search,
-  Filter,
-  ShieldCheck,
-  Building2,
-  Mail,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-  RotateCcw,
-  SlidersHorizontal,
-  UserCheck,
-  ShieldAlert,
-  UserX
-} from 'lucide-react';
+import { UserRoleModal } from './UserRoleModal';
 
 export function UsersList() {
   const [users, setUsers] = useState<User[]>([]);
@@ -35,8 +21,8 @@ export function UsersList() {
   const [selectedDepartement, setSelectedDepartement] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  // Modal
-  const [selectedUserForModal, setSelectedUserForModal] = useState<User | null>(null);
+  // Edit role modal
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchUsers = async () => {
@@ -44,9 +30,14 @@ export function UsersList() {
     setError(null);
     try {
       const data = await authService.getUsers();
-      setUsers(data);
+      if (Array.isArray(data)) {
+        setUsers(data);
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des utilisateurs.');
+      const msg = err instanceof Error ? err.message : '';
+      if (!msg.toLowerCase().includes('credential')) {
+        setError(msg || 'Impossible de charger la liste des utilisateurs.');
+      }
     } finally {
       setLoading(false);
     }
@@ -57,92 +48,70 @@ export function UsersList() {
   }, []);
 
   const handleUpdateRole = async (userId: number, newRole: UserRole, isActive: boolean) => {
-    try {
-      await authService.updateUserRole(userId, { role: newRole, is_active: isActive });
-      setSuccessBanner('Les informations du compte ont été mises à jour avec succès.');
-      setTimeout(() => setSuccessBanner(null), 3500);
-      await fetchUsers();
-    } catch (err: unknown) {
-      throw err;
-    }
+    await authService.updateUserRole(userId, { role: newRole, is_active: isActive });
+    setSuccessBanner('Les informations et le rôle du compte ont été mis à jour avec succès.');
+    setTimeout(() => setSuccessBanner(null), 3500);
+    await fetchUsers();
   };
 
-  // Departements list dynamically extracted from users
-  const departementsList = useMemo(() => {
-    const set = new Set<string>();
+  // Unique departments
+  const departements = useMemo(() => {
+    const deps = new Set<string>();
     users.forEach((u) => {
-      if (u.departement && u.departement.trim()) {
-        set.add(u.departement.trim());
-      }
+      if (u.departement) deps.add(u.departement);
     });
-    return Array.from(set);
+    return Array.from(deps);
   }, [users]);
 
-  // Filtered Users
+  // Stats
+  const stats = useMemo(() => {
+    const total = users.length;
+    const demandeurs = users.filter((u) => u.role === 'demandeur').length;
+    const intervenants = users.filter((u) => u.role === 'technicien').length;
+    const admins = users.filter((u) => u.role === 'admin').length;
+    return { total, demandeurs, intervenants, admins };
+  }, [users]);
+
+  // Filtered users
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      // 1. Search Query
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const fullName = `${u.prenom || ''} ${u.nom || ''}`.toLowerCase();
-        const emailMatch = u.email.toLowerCase().includes(query);
-        const depMatch = (u.departement || '').toLowerCase().includes(query);
-        if (!fullName.includes(query) && !emailMatch && !depMatch) return false;
-      }
+      const query = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
+        u.nom?.toLowerCase().includes(query) ||
+        u.prenom?.toLowerCase().includes(query) ||
+        u.email?.toLowerCase().includes(query) ||
+        u.username?.toLowerCase().includes(query) ||
+        u.departement?.toLowerCase().includes(query);
 
-      // 2. Role Filter
-      if (selectedRole !== 'all' && u.role !== selectedRole) {
-        return false;
-      }
+      const matchesRole = selectedRole === 'all' || u.role === selectedRole;
+      const matchesDepartement = selectedDepartement === 'all' || u.departement === selectedDepartement;
+      const matchesStatus =
+        selectedStatus === 'all' ||
+        (selectedStatus === 'active' ? u.is_active !== false : u.is_active === false);
 
-      // 3. Departement Filter
-      if (selectedDepartement !== 'all' && u.departement !== selectedDepartement) {
-        return false;
-      }
-
-      // 4. Status Filter
-      if (selectedStatus !== 'all') {
-        const isActive = u.is_active ?? true;
-        if (selectedStatus === 'active' && !isActive) return false;
-        if (selectedStatus === 'inactive' && isActive) return false;
-      }
-
-      return true;
+      return matchesSearch && matchesRole && matchesDepartement && matchesStatus;
     });
   }, [users, searchQuery, selectedRole, selectedDepartement, selectedStatus]);
-
-  const hasActiveFilters = Boolean(
-    searchQuery.trim() || selectedRole !== 'all' || selectedDepartement !== 'all' || selectedStatus !== 'all'
-  );
-
-  const resetFilters = () => {
-    setSearchQuery('');
-    setSelectedRole('all');
-    setSelectedDepartement('all');
-    setSelectedStatus('all');
-  };
 
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
       case 'admin':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
-            <ShieldAlert className="w-3 h-3" />
+          <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shadow-2xs">
             <span>Administrateur</span>
           </span>
         );
       case 'technicien':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
-            <ShieldCheck className="w-3 h-3" />
-            <span>Technicien</span>
+          <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-orange-50 text-orange-800 border border-orange-200 shadow-2xs">
+            <span>Intervenant</span>
           </span>
         );
       case 'demandeur':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
-            <UserCheck className="w-3 h-3" />
+          <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 shadow-2xs">
             <span>Demandeur</span>
           </span>
         );
@@ -150,238 +119,200 @@ export function UsersList() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      
-      {/* 1. En-tête */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-6xl mx-auto pb-16 animate-fade-in">
+      {/* 1. EN-TÊTE PRINCIPAL */}
+      <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-7 shadow-[0_2px_16px_rgba(0,43,127,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Utilisateurs
+          <h1 className="text-2xl sm:text-3xl font-black text-[#002B7F] tracking-tight">
+            Gestion des Utilisateurs &amp; Rôles
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Gérez les comptes et les rôles des utilisateurs de l&apos;entreprise.
+          <p className="text-xs sm:text-sm text-[#475569] font-medium mt-1">
+            Supervision des comptes collaborateurs, attribution des rôles et contrôle des accès
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs">
-          <Users className="w-4 h-4 text-slate-400" />
-          <span>{users.length} compte{users.length > 1 ? 's' : ''} enregistré{users.length > 1 ? 's' : ''}</span>
+        {/* Action principale unique : Orange Vif de l'affiche (#FF5E00) */}
+        <Link
+          href="/register"
+          className="inline-flex items-center px-5 py-2.5 rounded-xl bg-[#FF5E00] hover:bg-[#E05200] text-white text-xs font-black cursor-pointer active:scale-95 transition-all shrink-0 shadow-md"
+        >
+          <span>Inscrire un utilisateur</span>
+        </Link>
+      </div>
+
+      {/* BANNIÈRE DE SUCCÈS */}
+      {successBanner && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs font-bold animate-fade-in">
+          <span>{successBanner}</span>
+        </div>
+      )}
+
+      {/* 2. BANDEAU DE STATISTIQUES */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,43,127,0.02)] space-y-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-[#475569] block">Total Comptes</span>
+          <p className="text-2xl sm:text-3xl font-black text-[#071530]">{stats.total}</p>
+        </div>
+
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,43,127,0.02)] space-y-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-[#475569] block">Demandeurs</span>
+          <p className="text-2xl sm:text-3xl font-black text-[#002B7F]">{stats.demandeurs}</p>
+        </div>
+
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,43,127,0.02)] space-y-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-[#475569] block">Intervenants</span>
+          <p className="text-2xl sm:text-3xl font-black text-[#071530]">{stats.intervenants}</p>
+        </div>
+
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,43,127,0.02)] space-y-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-[#475569] block">Administrateurs</span>
+          <p className="text-2xl sm:text-3xl font-black text-[#071530]">{stats.admins}</p>
         </div>
       </div>
 
-      {/* Notifications */}
-      {successBanner && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 text-emerald-900 shadow-xs animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <p className="text-xs font-semibold">{successBanner}</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between gap-3 text-rose-800 text-xs">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-            <p className="font-semibold">{error}</p>
+      {/* 3. BARRE DE RECHERCHE & FILTRES */}
+      <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,43,127,0.02)] space-y-3">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1 group">
+            <input
+              type="text"
+              placeholder="Rechercher par nom, email, identifiant ou département..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 rounded-xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none focus:border-[#B3D1FF] focus:bg-white transition-all font-semibold"
+            />
           </div>
-          <button onClick={fetchUsers} className="underline font-bold hover:text-rose-950">
-            Réessayer
-          </button>
-        </div>
-      )}
 
-      {/* 2. Barre de Recherche et Filtres */}
-      <Card className="p-4 bg-white border border-slate-200/90 shadow-xs rounded-2xl space-y-3">
-        {/* Recherche */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-4 h-4" />
-          </div>
-          <input
-            type="text"
-            placeholder="Rechercher par nom, prénom ou adresse email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 transition-all"
-          />
-        </div>
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="px-3 py-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 text-[#071530] font-bold rounded-xl text-xs focus:outline-none focus:border-[#B3D1FF] focus:bg-white cursor-pointer transition-all"
+            >
+              <option value="all">Tous les rôles</option>
+              <option value="demandeur">Demandeurs</option>
+              <option value="technicien">Intervenants</option>
+              <option value="admin">Administrateurs</option>
+            </select>
 
-        {/* Ligne des filtres */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex flex-wrap items-center gap-2.5 flex-1">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Filtres</span>
-            </div>
-
-            {/* Filtre Rôle */}
-            <div className="w-40">
-              <Select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                options={[
-                  { value: 'all', label: 'Rôle : Tous' },
-                  { value: 'demandeur', label: 'Demandeurs' },
-                  { value: 'technicien', label: 'Techniciens' },
-                  { value: 'admin', label: 'Administrateurs' },
-                ]}
-              />
-            </div>
-
-            {/* Filtre Département */}
-            <div className="w-44">
-              <Select
+            {departements.length > 0 && (
+              <select
                 value={selectedDepartement}
                 onChange={(e) => setSelectedDepartement(e.target.value)}
-                options={[
-                  { value: 'all', label: 'Département : Tous' },
-                  ...departementsList.map((dep) => ({ value: dep, label: dep })),
-                ]}
-              />
-            </div>
+                className="px-3 py-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 text-[#071530] font-bold rounded-xl text-xs focus:outline-none focus:border-[#B3D1FF] focus:bg-white cursor-pointer transition-all"
+              >
+                <option value="all">Tous départements</option>
+                {departements.map((dep) => (
+                  <option key={dep} value={dep}>
+                    {dep}
+                  </option>
+                ))}
+              </select>
+            )}
 
-            {/* Filtre État */}
-            <div className="w-36">
-              <Select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                options={[
-                  { value: 'all', label: 'État : Tous' },
-                  { value: 'active', label: 'Actifs' },
-                  { value: 'inactive', label: 'Désactivés' },
-                ]}
-              />
-            </div>
-          </div>
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-3 py-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 text-[#071530] font-bold rounded-xl text-xs focus:outline-none focus:border-[#B3D1FF] focus:bg-white cursor-pointer transition-all"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Réinitialiser</span>
-            </button>
-          )}
+              <option value="all">Tous les états</option>
+              <option value="active">Comptes Actifs</option>
+              <option value="inactive">Comptes Désactivés</option>
+            </select>
+          </div>
         </div>
-      </Card>
+      </div>
 
-      {/* 3. TABLEAU DES UTILISATEURS */}
+      {/* 4. LISTE UTILISATEURS */}
       {loading ? (
-        <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-          <Loader2 className="w-8 h-8 animate-spin text-slate-700" />
-          <p className="text-xs font-semibold">Chargement des utilisateurs...</p>
+        <div className="py-20 text-center space-y-3 bg-white rounded-2xl border border-slate-100">
+          <Loader2 className="w-8 h-8 animate-spin text-[#002B7F] mx-auto" />
+          <p className="text-xs text-[#475569] font-bold">Chargement des utilisateurs...</p>
+        </div>
+      ) : error ? (
+        <div className="p-6 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs font-bold">
+          <span>{error}</span>
         </div>
       ) : filteredUsers.length === 0 ? (
-        <Card className="p-12 text-center space-y-2 bg-white border border-slate-200/80 rounded-3xl">
-          <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200/60 mx-auto flex items-center justify-center text-slate-400">
-            <Users className="w-6 h-6" />
-          </div>
-          <p className="text-sm font-bold text-slate-900">Aucun utilisateur trouvé</p>
-          <p className="text-xs text-slate-400">Ajustez vos critères de recherche ou vos filtres.</p>
-        </Card>
+        <div className="p-12 text-center bg-white border border-slate-100 rounded-3xl space-y-3 shadow-[0_2px_14px_rgba(0,43,127,0.02)]">
+          <h3 className="text-sm font-black text-[#071530]">Aucun utilisateur trouvé</h3>
+          <p className="text-xs text-[#475569]">
+            Aucun compte ne correspond à vos critères de recherche actuels.
+          </p>
+        </div>
       ) : (
-        <Card className="overflow-hidden bg-white border border-slate-200/90 shadow-xs rounded-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200/80 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="py-3.5 px-4">Utilisateur</th>
-                  <th className="py-3.5 px-4">Email</th>
-                  <th className="py-3.5 px-4">Département / Service</th>
-                  <th className="py-3.5 px-4">Rôle</th>
-                  <th className="py-3.5 px-4">État</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredUsers.map((u) => {
-                  const displayName = [u.prenom, u.nom].filter(Boolean).join(' ') || u.nom || 'Sans nom';
-                  const initial = displayName.charAt(0).toUpperCase();
-                  const isActive = u.is_active ?? true;
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_2px_16px_rgba(0,43,127,0.03)] overflow-hidden">
+          <div className="divide-y divide-slate-100">
+            {filteredUsers.map((u) => {
+              const displayName = [u.prenom, u.nom].filter(Boolean).join(' ') || u.nom || u.username || u.email;
+              const initial = displayName.charAt(0).toUpperCase();
 
-                  return (
-                    <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                      {/* Nom et Prénom + Avatar */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                            {initial}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{displayName}</p>
-                            <p className="text-[10px] text-slate-400">ID #{u.id}</p>
-                          </div>
-                        </div>
-                      </td>
+              return (
+                <div
+                  key={u.id}
+                  className="p-4 sm:p-5 hover:bg-[#F0F6FF] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#002B7F] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                      {initial}
+                    </div>
 
-                      {/* Email */}
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
-                        {u.email}
-                      </td>
-
-                      {/* Département */}
-                      <td className="py-3.5 px-4 text-slate-600">
-                        {u.departement ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                            <span>{u.departement}</span>
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">Non assigné</span>
-                        )}
-                      </td>
-
-                      {/* Rôle */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-black text-[#071530] truncate">
+                          {displayName}
+                        </p>
                         {getRoleBadge(u.role)}
-                      </td>
-
-                      {/* État */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {isActive ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Actif
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        {u.is_active === false && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-rose-50 text-rose-800 border border-rose-200 rounded-md">
                             Désactivé
                           </span>
                         )}
-                      </td>
+                      </div>
 
-                      {/* Action : Modifier le rôle */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUserForModal(u);
-                            setIsModalOpen(true);
-                          }}
-                          className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
-                        >
-                          Modifier le rôle
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      <div className="flex items-center gap-3 text-xs text-[#1E293B] font-medium flex-wrap">
+                        <span>{u.email}</span>
+                        {u.departement && (
+                          <span className="text-[#002B7F] font-bold">
+                            Département : {u.departement}
+                          </span>
+                        )}
+                        {u.telephone && (
+                          <span>Tél : {u.telephone}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    {/* Bouton secondaire Modifier rôle */}
+                    <button
+                      onClick={() => {
+                        setSelectedUserForEdit(u);
+                        setIsModalOpen(true);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#E8F1FF] border border-[#CBD5E1] hover:border-[#002B7F] text-[#002B7F] text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-xs"
+                    >
+                      <span>Modifier rôle</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Modale de gestion des rôles */}
+      {/* MODALE D'ÉDITION DE RÔLE */}
       <UserRoleModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        user={selectedUserForModal}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedUserForEdit(null);
+        }}
+        user={selectedUserForEdit}
         onConfirm={handleUpdateRole}
       />
-
     </div>
   );
 }

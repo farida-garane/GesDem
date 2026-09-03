@@ -99,6 +99,18 @@ export const demandeService = {
     return await api.patch<Demande>(`/api/demandes/${id}/`, data);
   },
 
+  async cloturerDemande(id: number | string): Promise<Demande> {
+    return await api.patch<Demande>(`/api/demandes/${id}/`, {
+      statut: 5,
+    });
+  },
+
+  async rouvrirDemande(id: number | string, motif?: string): Promise<Demande> {
+    return await api.patch<Demande>(`/api/demandes/${id}/`, {
+      statut: 3,
+    });
+  },
+
   async getDemandeHistorique(demandeId: number | string): Promise<HistoriqueStatut[]> {
     try {
       return await api.get<HistoriqueStatut[]>(`/api/demandes/${demandeId}/historique/`);

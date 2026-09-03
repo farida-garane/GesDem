@@ -7,11 +7,11 @@ import { useAuth } from '@/context/AuthContext';
 import {
   LogOut,
   Layers,
-  Bell,
   RotateCcw,
   User as UserIcon,
   LogIn
 } from 'lucide-react';
+import { NotificationDropdown } from '@/components/layout/NotificationDropdown';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -38,24 +38,21 @@ export function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/70 bg-white/80 backdrop-blur-xl shadow-2xs">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
         {/* 1. LOGO & IDENTITÉ DEMOPS */}
         <Link href={user ? '/demandes' : '/login'} className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-orange-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform duration-200">
-            <Layers className="w-5 h-5 text-white stroke-[2.5]" />
+          <div className="w-9 h-9 rounded-xl bg-[#002B7F] flex items-center justify-center text-white shadow-xs">
+            <Layers className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-base font-black text-slate-900 tracking-tight">
-                DemOps
-              </span>
-              <span className="text-[10px] font-black uppercase px-1.5 py-0.5 bg-gradient-to-r from-blue-50 to-orange-50 text-blue-700 border border-blue-200/60 rounded-md">
-                Cloud
+              <span className="text-xl font-black text-[#002B7F] tracking-tight group-hover:text-[#0047cc] transition-colors">
+                Dem<span className="text-[#FF5E00]">Ops</span>
               </span>
             </div>
-            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline-block">
+            <span className="text-[11px] text-[#475569] font-medium hidden sm:inline-block">
               Support &amp; Interventions
             </span>
           </div>
@@ -64,46 +61,34 @@ export function Header() {
         {/* 2. SECTION DROITE : ACTUALISER, NOTIFICATIONS & PROFIL */}
         <div className="flex items-center gap-2 sm:gap-2.5">
           
-          {/* ========================================================
-              BOUTON ACTUALISER DANS LA BARRE DE NAVIGATION
-              ======================================================== */}
+          {/* BOUTON ACTUALISER DANS LA BARRE DE NAVIGATION */}
           <button
             onClick={handleRefresh}
             title="Actualiser la page"
             aria-label="Actualiser la page"
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white border border-slate-200/90 text-slate-700 hover:text-blue-600 hover:bg-slate-50 hover:border-blue-300 transition-all shadow-2xs cursor-pointer active:scale-95"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50/80 hover:bg-[#E8F1FF] text-[#002B7F] border border-slate-100 hover:border-[#B3D1FF] transition-all cursor-pointer"
           >
-            <RotateCcw className={`w-4 h-4 stroke-[2.2] ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
+            <RotateCcw className={`w-4 h-4 stroke-[2.5] ${isRefreshing ? 'animate-spin text-[#002B7F]' : ''}`} />
           </button>
 
-          {/* ========================================================
-              ICÔNE DE NOTIFICATION SIMPLE & PROPRE
-              ======================================================== */}
-          <button
-            title="Notifications"
-            aria-label="Notifications"
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white border border-slate-200/90 text-slate-700 hover:text-blue-600 hover:bg-slate-50 hover:border-blue-300 transition-all shadow-2xs cursor-pointer active:scale-95"
-          >
-            <Bell className="w-4 h-4 stroke-[2.2]" />
-          </button>
+          {/* MENU DE NOTIFICATIONS */}
+          <NotificationDropdown />
 
-          {/* ========================================================
-              BADGE PROFIL / ESPACE UTILISATEUR
-              ======================================================== */}
+          {/* BADGE PROFIL / ESPACE UTILISATEUR */}
           {user ? (
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2.5 p-1.5 pr-3 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 hover:border-blue-300 transition-all cursor-pointer group"
+                className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl bg-slate-50/80 hover:bg-[#E8F1FF] border border-slate-100 hover:border-[#B3D1FF] transition-all cursor-pointer group"
               >
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-2xs">
+                <div className="w-8 h-8 rounded-lg bg-[#002B7F] flex items-center justify-center text-white font-black text-xs shadow-xs">
                   {(user.nom || user.email || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-xs font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors truncate max-w-[120px]">
+                  <p className="text-xs font-black text-[#071530] leading-tight group-hover:text-[#002B7F] transition-colors truncate max-w-[120px]">
                     {user.nom || user.email}
                   </p>
-                  <p className="text-[10px] font-bold text-orange-600 capitalize">
+                  <p className="text-[10px] font-bold text-[#002B7F] capitalize">
                     {user.role || 'Demandeur'}
                   </p>
                 </div>
@@ -111,15 +96,15 @@ export function Header() {
 
               {/* Dropdown Menu Profil */}
               {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-3xl bg-white border border-slate-200 shadow-2xl p-2 space-y-1 z-50 animate-fade-in">
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-slate-100 shadow-[0_10px_30px_rgba(0,43,127,0.08)] p-2 space-y-1 z-50 animate-fade-in">
                   <div className="p-3 border-b border-slate-100">
-                    <p className="text-xs font-black text-slate-900 truncate">
+                    <p className="text-xs font-black text-[#071530] truncate">
                       {user.nom || user.email}
                     </p>
-                    <p className="text-[10px] font-semibold text-slate-400 truncate">
+                    <p className="text-[10px] font-semibold text-[#475569] truncate">
                       {user.email}
                     </p>
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-[#E8F1FF] text-[#002B7F]">
                       Rôle : {user.role || 'Demandeur'}
                     </span>
                   </div>
@@ -127,9 +112,9 @@ export function Header() {
                   <Link
                     href="/profil"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition-all"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-[#071530] hover:text-[#002B7F] hover:bg-[#E8F1FF] transition-all"
                   >
-                    <UserIcon className="w-4 h-4 text-slate-400" />
+                    <UserIcon className="w-4 h-4 text-[#002B7F]" />
                     <span>Mon Profil</span>
                   </Link>
 
@@ -138,9 +123,9 @@ export function Header() {
                       setIsProfileOpen(false);
                       logout();
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 transition-all cursor-pointer"
                   >
-                    <LogOut className="w-4 h-4 text-rose-500" />
+                    <LogOut className="w-4 h-4 text-rose-600" />
                     <span>Se déconnecter</span>
                   </button>
                 </div>
@@ -149,7 +134,7 @@ export function Header() {
           ) : (
             <Link
               href="/login"
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#FF5E00] hover:bg-[#E05200] text-white text-xs font-bold transition-all shadow-md active:scale-95"
             >
               <LogIn className="w-4 h-4 stroke-[2.5]" />
               <span>Connexion</span>
@@ -161,9 +146,9 @@ export function Header() {
             <button
               onClick={logout}
               title="Se déconnecter"
-              className="w-10 h-10 hidden md:flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all border border-slate-200/90 hover:border-rose-200 bg-white cursor-pointer shadow-2xs"
+              className="w-10 h-10 hidden md:flex items-center justify-center text-[#475569] hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all border border-slate-100 bg-slate-50/80 cursor-pointer"
             >
-              <LogOut className="w-4 h-4 stroke-[2.2]" />
+              <LogOut className="w-4 h-4" />
             </button>
           )}
 

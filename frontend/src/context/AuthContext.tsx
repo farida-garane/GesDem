@@ -9,7 +9,10 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (credentials: { username: string; password: string }) => Promise<void>;
+  login: (
+    credentials: { username: string; password: string },
+    targetEspace?: 'demandeur' | 'technicien' | 'admin'
+  ) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
@@ -42,14 +45,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  const login = async (credentials: { username: string; password: string }) => {
+  const login = async (
+    credentials: { username: string; password: string },
+    targetEspace?: 'demandeur' | 'technicien' | 'admin'
+  ) => {
     setIsLoading(true);
     try {
       const response = await authService.login(credentials);
       setToken(response.token);
       const profile = await authService.getProfile();
       setUser(profile);
-      router.push('/demandes');
+
+      // Contrôle de rôle selon l'espace choisi
+      if (targetEspace === 'admin' && profile.role !== 'admin') {
+        authService.logout();
+        setUser(null);
+        setToken(null);
+        throw new Error("Accès refusé : Ce compte ne dispose pas des privilèges d'Administrateur.");
+      }
+
+      if (targetEspace === 'technicien' && profile.role !== 'technicien' && profile.role !== 'admin') {
+        authService.logout();
+        setUser(null);
+        setToken(null);
+        throw new Error("Accès refusé : Ce compte n'a pas les droits d'Intervenant / Gestionnaire. Veuillez contacter l'administrateur.");
+      }
+
+      // Redirection vers l'espace approprié
+      if (targetEspace === 'admin' || (!targetEspace && profile.role === 'admin')) {
+        router.push('/admin');
+      } else if (targetEspace === 'technicien' || (!targetEspace && profile.role === 'technicien')) {
+        router.push('/interventions');
+      } else {
+        router.push('/demandes');
+      }
     } finally {
       setIsLoading(false);
     }

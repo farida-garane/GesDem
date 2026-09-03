@@ -9,23 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/services/auth.service';
 import { User } from '@/types/user';
-import {
-  User as UserIcon,
-  Mail,
-  Building2,
-  CheckCircle2,
-  AlertCircle,
-  Pencil,
-  Save,
-  KeyRound,
-  Lock,
-  Eye,
-  EyeOff,
-  Fingerprint,
-  Sparkles,
-  Calendar,
-  Check
-} from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function ProfileView() {
   const searchParams = useSearchParams();
@@ -176,26 +160,24 @@ export function ProfileView() {
           <button
             type="button"
             onClick={() => setActiveTab('general')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'general'
                 ? 'bg-white text-blue-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <UserIcon className="w-3.5 h-3.5" />
             <span>Informations</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('securite')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'securite'
                 ? 'bg-white text-blue-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Lock className="w-3.5 h-3.5" />
             <span>Sécurité</span>
           </button>
         </div>
@@ -203,15 +185,13 @@ export function ProfileView() {
 
       {/* Notifications globales */}
       {infoSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 text-emerald-900 shadow-xs animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 shadow-xs animate-in fade-in">
           <p className="text-xs font-bold">{infoSuccess}</p>
         </div>
       )}
 
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-center gap-3 text-rose-900 shadow-xs animate-in fade-in">
-          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 shadow-xs animate-in fade-in">
           <p className="text-xs font-bold">{error}</p>
         </div>
       )}
@@ -240,8 +220,7 @@ export function ProfileView() {
             {/* Badges de synthèse */}
             <div className="pt-4 border-t border-slate-100 space-y-2.5 text-xs text-left">
               <div className="p-3 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between">
-                <span className="text-slate-500 font-bold flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-slate-500 font-bold">
                   <span>Rôle</span>
                 </span>
                 <span className="font-extrabold text-orange-600 capitalize bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200/60">
@@ -250,8 +229,7 @@ export function ProfileView() {
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between">
-                <span className="text-slate-500 font-bold flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-slate-500 font-bold">
                   <span>Département</span>
                 </span>
                 <span className="font-bold text-slate-800">{departement || 'Non spécifié'}</span>
@@ -314,9 +292,8 @@ export function ProfileView() {
                   <button
                     type="submit"
                     disabled={savingInfo}
-                    className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-bold shadow-md shadow-orange-500/25 hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                    className="px-6 py-2.5 bg-[#FF5E00] hover:bg-[#E05200] text-white rounded-2xl text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
                   >
-                    <Save className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>{savingInfo ? 'Enregistrement...' : 'Enregistrer les modifications'}</span>
                   </button>
                 </div>
@@ -337,15 +314,13 @@ export function ProfileView() {
               </div>
 
               {passwordSuccess && (
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-2.5 text-emerald-900 text-xs font-bold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold">
                   <span>{passwordSuccess}</span>
                 </div>
               )}
 
               {passwordError && (
-                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-center gap-2.5 text-rose-900 text-xs font-bold">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-bold">
                   <span>{passwordError}</span>
                 </div>
               )}
@@ -408,9 +383,8 @@ export function ProfileView() {
                   <button
                     type="submit"
                     disabled={savingPassword}
-                    className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-bold shadow-md shadow-orange-500/25 hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                    className="px-6 py-2.5 bg-[#FF5E00] hover:bg-[#E05200] text-white rounded-2xl text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
                   >
-                    <Save className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>{savingPassword ? 'Modification...' : 'Mettre à jour le mot de passe'}</span>
                   </button>
                 </div>
