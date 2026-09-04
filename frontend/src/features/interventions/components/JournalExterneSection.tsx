@@ -87,7 +87,7 @@ export function JournalExterneSection({
         };
       case 'en_attente_livraison':
         return {
-          label: 'En attente de pièces / livraison',
+          label: 'En attente de livraison',
           style: 'bg-indigo-100 text-indigo-950 border-indigo-300',
         };
       case 'repare_retourne':
@@ -209,19 +209,14 @@ export function JournalExterneSection({
           </p>
         </div>
 
-        {/* Dates & Coûts */}
+        {/* Suivi Budgétaire */}
         <div className="space-y-1">
           <p className="text-[10px] font-black uppercase tracking-wider text-[#475569]">
-            Délais & Suivi Budgétaire
+            Suivi &amp; Devis
           </p>
           <p className="text-xs font-semibold text-[#071530]">
             Envoyé le : {formatDate(activeEscalade.date_envoi)}
           </p>
-          {activeEscalade.date_retour_prevue && (
-            <p className="text-xs font-semibold text-[#071530]">
-              Retour prévu : {formatDate(activeEscalade.date_retour_prevue)}
-            </p>
-          )}
           {activeEscalade.cout_estime !== null && activeEscalade.cout_estime !== undefined && (
             <p className="text-xs font-black text-[#002B7F]">
               Montant estimé : {activeEscalade.cout_estime} € / FCFA
@@ -249,7 +244,7 @@ export function JournalExterneSection({
               Changer l&apos;état chez le prestataire :
             </p>
             <p className="text-[11px] text-[#475569] font-medium">
-              Mettez à jour dès que le tiers envoie le devis, les pièces ou restitue le matériel réparé.
+              Mettez à jour dès que le tiers envoie le devis, valide ou restitue le matériel réparé.
             </p>
           </div>
 
@@ -262,8 +257,8 @@ export function JournalExterneSection({
             >
               <option value="en_cours_reparation">En cours de réparation / SAV</option>
               <option value="en_attente_devis">En attente de devis</option>
-              <option value="en_attente_livraison">En attente de pièces / livraison</option>
-              <option value="repare_retourne">Réparé & retourné aux locaux</option>
+              <option value="en_attente_livraison">En attente de livraison</option>
+              <option value="repare_retourne">Réparé &amp; retourné aux locaux</option>
               <option value="annule">Annulé</option>
             </select>
           </div>

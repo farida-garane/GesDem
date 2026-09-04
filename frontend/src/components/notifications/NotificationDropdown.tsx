@@ -1,25 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { notificationService } from '@/services/notification.service';
 import { AppNotification } from '@/types/notification';
-import {
-  Bell,
-  CheckCircle2,
-  AlertTriangle,
-  MessageSquare,
-  Star,
-  Wrench,
-  FileText,
-  Clock,
-  CheckCheck,
-  Trash2,
-  ExternalLink,
-  Inbox
-} from 'lucide-react';
+import { Bell } from 'lucide-react';
 
 export function NotificationDropdown() {
   const { user } = useAuth();
@@ -86,23 +72,6 @@ export function NotificationDropdown() {
     loadNotifications();
   };
 
-  const getIcon = (type: AppNotification['type']) => {
-    switch (type) {
-      case 'prise_en_charge':
-        return <Wrench className="w-4 h-4 text-orange-600" />;
-      case 'resolution':
-        return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
-      case 'avis_satisfaction':
-        return <Star className="w-4 h-4 text-amber-500 fill-amber-500" />;
-      case 'nouveau_commentaire':
-        return <MessageSquare className="w-4 h-4 text-blue-600" />;
-      case 'alerte_admin':
-        return <AlertTriangle className="w-4 h-4 text-rose-600" />;
-      default:
-        return <FileText className="w-4 h-4 text-blue-600" />;
-    }
-  };
-
   const formatTimeAgo = (dateStr: string) => {
     try {
       const now = new Date();
@@ -161,10 +130,9 @@ export function NotificationDropdown() {
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer hover:underline"
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
               >
-                <CheckCheck className="w-3.5 h-3.5" />
-                <span>Tout marquer comme lu</span>
+                Tout marquer comme lu
               </button>
             )}
           </div>
@@ -197,7 +165,6 @@ export function NotificationDropdown() {
           <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
             {filteredList.length === 0 ? (
               <div className="py-8 text-center space-y-2 text-slate-400">
-                <Inbox className="w-8 h-8 mx-auto stroke-[1.5] text-slate-300" />
                 <p className="text-xs font-semibold">
                   {filter === 'unread' ? 'Aucune notification non lue.' : 'Aucune notification pour le moment.'}
                 </p>
@@ -207,31 +174,15 @@ export function NotificationDropdown() {
                 <div
                   key={notif.id}
                   onClick={() => handleClickItem(notif)}
-                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 group relative ${
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col gap-1 group relative ${
                     notif.est_lu
                       ? 'bg-white border-slate-100 hover:bg-slate-50/80 text-slate-700'
                       : 'bg-blue-50/50 border-blue-200/70 hover:bg-blue-50/80 text-slate-900 font-medium shadow-2xs'
                   }`}
                 >
-                  {/* Icône selon type */}
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
-                    notif.est_lu ? 'bg-slate-100 border-slate-200' : 'bg-white border-blue-200 shadow-2xs'
-                  }`}>
-                    {getIcon(notif.type)}
-                  </div>
-
-                  {/* Contenu */}
-                  <div className="flex-1 space-y-0.5 overflow-hidden">
-                    <div className="flex items-center justify-between gap-1">
-                      <p className={`text-xs font-extrabold truncate ${notif.est_lu ? 'text-slate-800' : 'text-blue-950'}`}>
-                        {notif.titre}
-                      </p>
-                      <span className="text-[10px] text-slate-400 shrink-0 font-medium">
-                        {formatTimeAgo(notif.date_creation)}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">
-                      {notif.message}
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black text-slate-900 truncate">
+                      {notif.titre}
                     </p>
                   </div>
 
@@ -239,9 +190,9 @@ export function NotificationDropdown() {
                   <button
                     onClick={(e) => handleDeleteItem(e, notif.id)}
                     title="Supprimer"
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 rounded-lg transition-opacity text-xs"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    &times;
                   </button>
 
                   {/* Point bleu non lu */}

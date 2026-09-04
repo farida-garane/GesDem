@@ -10,13 +10,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* 1. Header supérieur moderne */}
       <Header />
 
-      {/* 2. Contenu principal avec Sidebar */}
-      <div className="flex-1 flex flex-col md:flex-row w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6">
-        <Suspense fallback={<aside className="w-full md:w-64 shrink-0 p-6" />}>
+      {/* 2. Contenu principal avec Sidebar spacieuse et aérée */}
+      <div className="flex-1 flex flex-col md:flex-row w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-8 items-start">
+        <Suspense fallback={<aside className="w-full md:w-72 shrink-0 p-6" />}>
           <Sidebar />
         </Suspense>
 
-        <main className="flex-1 p-2 md:p-4 overflow-y-auto">
+        <main className="flex-1 min-w-0 w-full">
           {children}
         </main>
       </div>

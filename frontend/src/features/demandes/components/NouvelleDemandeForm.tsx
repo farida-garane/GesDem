@@ -47,7 +47,7 @@ export function NouvelleDemandeForm() {
           { id: 3, libelle: 'Réseau & Connexion (Wi-Fi, VPN, Internet)' },
           { id: 4, libelle: 'Assistance informatique (Mot de passe, droits)' },
           { id: 5, libelle: 'Logistique & Mobilier (Déplacement de poste)' },
-          { id: 99, libelle: 'Autre (Problème non listé)' },
+          { id: 6, libelle: 'Autre (Problème non listé)' },
         ]);
       } finally {
         setLoadingCategories(false);
@@ -58,7 +58,7 @@ export function NouvelleDemandeForm() {
 
   const isAutreSelected = () => {
     const selected = categories.find((c) => String(c.id) === String(categorieId));
-    return selected?.libelle.toLowerCase().includes('autre') || categorieId === '99';
+    return selected?.libelle.toLowerCase().includes('autre') || categorieId === '6' || categorieId === '99';
   };
 
   const validate = () => {
@@ -79,9 +79,9 @@ export function NouvelleDemandeForm() {
     }
 
     if (!description.trim()) {
-      newErrors.description = "Veuillez décrire votre problème avec le plus de détails possible.";
-    } else if (description.length < 10) {
-      newErrors.description = "La description doit comporter au moins 10 caractères pour aider le technicien.";
+      newErrors.description = "La description est requise.";
+    } else if (description.trim().length < 10) {
+      newErrors.description = "La description doit comporter au moins 10 caractères pour aider les Services Généraux.";
     }
 
     setErrors(newErrors);
@@ -149,36 +149,36 @@ export function NouvelleDemandeForm() {
   const urgenceLabel = urgence === 'eleve' ? 'Haute' : urgence === 'moyen' ? 'Moyenne' : 'Faible';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-16 animate-fade-in">
+    <div className="max-w-4xl mx-auto space-y-8 pb-16 animate-fade-in">
       
       {/* En-tête avec retour */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
         <div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <Link
               href="/demandes"
-              className="text-xs font-bold text-[#002B7F] hover:underline"
+              className="text-xs sm:text-sm font-black text-[#002B7F] hover:underline"
             >
               &larr; Retour
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#002B7F] tracking-tight">
               Nouvelle demande
             </h1>
           </div>
-          <p className="text-xs text-slate-500 font-medium mt-1">
+          <p className="text-sm text-[#475569] font-semibold mt-1.5">
             Déposez votre ticket auprès du service technique.
           </p>
         </div>
       </div>
 
       {/* Conseil d'assistance préalable pour limiter les demandes inutiles */}
-      <div className="p-3.5 rounded-2xl bg-[#E8F1FF] border border-[#B3D1FF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <span className="font-medium text-[#1E293B]">
+      <div className="p-5 rounded-3xl bg-[#E8F1FF] border border-[#B3D1FF] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm shadow-xs">
+        <span className="font-semibold text-[#1E293B] leading-relaxed">
           Un souci courant (App Repas, double écran, Wi-Fi...) ? Consultez la fiche d&apos;assistance pour le résoudre en autonomie.
         </span>
         <Link
           href="/aide"
-          className="shrink-0 px-3 py-1.5 rounded-xl bg-white border border-[#B3D1FF] text-[#002B7F] font-bold hover:bg-white/80 transition-colors shadow-2xs text-center"
+          className="shrink-0 px-4 py-2 rounded-2xl bg-white border border-[#B3D1FF] text-[#002B7F] font-black hover:bg-white/80 transition-colors shadow-2xs text-center text-xs sm:text-sm"
         >
           Consulter la fiche &rarr;
         </Link>
@@ -188,7 +188,7 @@ export function NouvelleDemandeForm() {
       {isSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 shadow-xs animate-in fade-in">
           <p className="font-bold text-sm">Demande enregistrée avec succès !</p>
-          <p className="text-xs text-emerald-700">Votre demande a été transmise aux techniciens. Redirection en cours...</p>
+          <p className="text-xs text-emerald-700">Votre demande a été transmise aux Services Généraux. Redirection en cours...</p>
         </div>
       )}
 

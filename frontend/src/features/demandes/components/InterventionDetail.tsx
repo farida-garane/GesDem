@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
 import { SlaBadge } from '@/components/ui/SlaBadge';
 import { useAuth } from '@/context/AuthContext';
@@ -21,7 +22,17 @@ interface InterventionDetailProps {
 }
 
 export function InterventionDetail({ demandeId }: InterventionDetailProps) {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+
+  // Contrôle d'accès strict
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user || user.role === 'demandeur') {
+        router.push('/login/intervenant');
+      }
+    }
+  }, [user, authLoading, router]);
 
   const [demande, setDemande] = useState<Demande | null>(null);
   const [statuts, setStatuts] = useState<Statut[]>([]);
@@ -119,7 +130,7 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
       });
       showToast('Vous avez pris en charge ce dossier.', 'success');
       await loadData();
-    } catch (err: unknown) {
+    } catch (err: unknown)  {
       showToast(err instanceof Error ? err.message : "Erreur lors de la prise en charge", 'error');
     } finally {
       setAssigningSelf(false);
@@ -222,7 +233,7 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
   const isTermine = statutLibelle.toLowerCase().includes('resolu') || statutLibelle.toLowerCase().includes('cloture') || demande.statut === 4 || demande.statut === 5;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-fade-in pb-16 relative">
+    <div className="w-full space-y-8 animate-fade-in pb-16 relative">
       
       {/* TOAST FLOTTANT */}
       {toast && (
@@ -351,7 +362,6 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
                     <p className="text-xs font-bold text-[#071530] truncate">
                       {demande.technicien.nom || demande.technicien.email}
                     </p>
-                    <p className="text-[10px] font-bold text-[#002B7F]">Intervenant en charge</p>
                   </div>
                 </div>
               ) : (
@@ -449,25 +459,21 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
             Aucun changement de statut enregistré pour le moment.
           </div>
         ) : (
-          <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#B3D1FF]">
+          <div className="space-y-3">
             {historique.map((item, idx) => (
-              <div key={item.id || idx} className="relative group">
-                <span className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-white bg-[#002B7F]" />
-                
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-[#071530]">
-                    Statut passé à :{' '}
-                    <span className="text-[#002B7F] font-black">
-                      {item.nouveau_statut?.libelle || 'Inconnu'}
-                    </span>
-                  </p>
-                  <p className="text-[11px] text-[#1E293B] font-semibold">
-                    <span>{formatDate(item.date_changement)}</span>
-                    {item.modifie_par && (
-                      <span> • par <strong className="text-[#071530]">{item.modifie_par.nom || item.modifie_par.email}</strong></span>
-                    )}
-                  </p>
-                </div>
+              <div key={item.id || idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                <p className="text-xs font-bold text-[#071530]">
+                  Statut passé à :{' '}
+                  <span className="text-[#002B7F] font-black">
+                    {item.nouveau_statut?.libelle || 'Inconnu'}
+                  </span>
+                </p>
+                <p className="text-xs text-[#475569] font-medium">
+                  <span>{formatDate(item.date_changement)}</span>
+                  {item.modifie_par && (
+                    <span> • par <strong className="text-[#071530]">{item.modifie_par.nom || item.modifie_par.email}</strong></span>
+                  )}
+                </p>
               </div>
             ))}
           </div>
@@ -479,11 +485,8 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
             <h2 className="text-xs font-black uppercase tracking-wider text-[#002B7F]">
-              Journal de suivi &amp; Échanges
+              Messages
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E8F1FF] text-[#002B7F] border border-[#B3D1FF]">
-              {commentaires.length} message{commentaires.length > 1 ? 's' : ''}
-            </span>
           </div>
 
           {/* Fil des messages */}

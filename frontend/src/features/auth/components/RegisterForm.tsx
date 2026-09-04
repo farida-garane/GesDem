@@ -106,7 +106,7 @@ export function RegisterForm() {
           onChange={(e) => setNom(e.target.value)}
           required
           autoFocus
-          placeholder="Ex : Jean Dupont"
+          placeholder=""
           disabled={isLoading}
           className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
         />
@@ -122,7 +122,7 @@ export function RegisterForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          placeholder="Ex : jean.dupont@entreprise.com"
+          placeholder=""
           disabled={isLoading}
           className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
         />
@@ -137,28 +137,38 @@ export function RegisterForm() {
           type="text"
           value={departement}
           onChange={(e) => setDepartement(e.target.value)}
-          placeholder="Ex : Comptabilité, RH, Logistique..."
+          placeholder="Ex : Comptabilité,..."
           disabled={isLoading}
           className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
         />
       </div>
 
-      {/* 4. Mots de passe en 2 colonnes */}
+      {/* 4. Mots de passe en 2 colonnes avec boutons oeil */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Mot de passe */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
             Mot de passe *
           </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="••••••••"
-            disabled={isLoading}
-            className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder=""
+              disabled={isLoading}
+              className="w-full px-4 pr-11 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#475569] hover:text-[#002B7F] p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Confirmation */}
@@ -166,15 +176,25 @@ export function RegisterForm() {
           <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
             Confirmation *
           </label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            placeholder="••••••••"
-            disabled={isLoading}
-            className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
-          />
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              placeholder=""
+              disabled={isLoading}
+              className="w-full px-4 pr-11 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              aria-label={showConfirmPassword ? "Masquer la confirmation" : "Afficher la confirmation"}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#475569] hover:text-[#002B7F] p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </div>
 

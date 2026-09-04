@@ -77,7 +77,7 @@ export const GUIDE_SECTIONS: {
         'Créer un ticket avec l’objet « Demande de nouvel ordinateur » en précisant vos besoins logiciels (développement, bureautique).',
         'Le support informatique configure la machine avec votre profil et vous informe dès que le poste est prêt.'
       ],
-      notice: 'Délai standard de préparation : 48 heures ouvrées.'
+      notice: 'Préparation et mise à disposition par le support informatique.'
     },
     {
       id: 'borne-cantine-hs',

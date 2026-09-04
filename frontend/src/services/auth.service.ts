@@ -1,5 +1,5 @@
 import { api } from './api';
-import { User, LoginResponse, RegisterPayload, UserRole, ChangePasswordPayload, UpdateUserRolePayload } from '@/types/user';
+import { User, LoginResponse, RegisterPayload, UserRole, ChangePasswordPayload, UpdateUserRolePayload, UpdateUserAdminPayload } from '@/types/user';
 
 export const authService = {
   async login(credentials: { username: string; password: string }): Promise<LoginResponse> {
@@ -16,6 +16,7 @@ export const authService = {
 
   async register(payload: RegisterPayload): Promise<User> {
     return api.post<User>('/api/accounts/register/', {
+      nom: payload.nom,
       username: payload.nom,
       email: payload.email,
       password: payload.password,
@@ -42,6 +43,7 @@ export const authService = {
 
   async createUser(payload: RegisterPayload): Promise<User> {
     return api.post<User>('/api/accounts/register/', {
+      nom: payload.nom,
       username: payload.nom,
       email: payload.email,
       password: payload.password,
@@ -50,8 +52,16 @@ export const authService = {
     });
   },
 
-  async updateUserRole(userId: number, payload: UpdateUserRolePayload): Promise<User> {
+  async updateUser(userId: number, payload: UpdateUserAdminPayload): Promise<User> {
     return api.patch<User>(`/api/accounts/users/${userId}/`, payload);
+  },
+
+  async updateUserRole(userId: number, payload: UpdateUserRolePayload | UpdateUserAdminPayload): Promise<User> {
+    return api.patch<User>(`/api/accounts/users/${userId}/`, payload);
+  },
+
+  async deleteUser(userId: number): Promise<void> {
+    return api.delete<void>(`/api/accounts/users/${userId}/`);
   },
 
   logout(): void {

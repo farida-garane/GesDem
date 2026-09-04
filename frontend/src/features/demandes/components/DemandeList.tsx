@@ -53,7 +53,7 @@ export function DemandeList() {
       case 'en_attente':
         return {
           title: 'Demandes en attente',
-          desc: 'Tickets en attente de prise en charge par un technicien informatique.',
+          desc: 'Tickets en attente de prise en charge par les Services Généraux.',
         };
       case 'en_cours':
         return {
@@ -140,29 +140,29 @@ export function DemandeList() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-16 animate-fade-in">
+    <div className="w-full space-y-8 pb-16 animate-fade-in">
       
       {/* 1. EN-TÊTE MODERNE */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 pb-5 border-b border-slate-200/80">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-black text-[#002B7F] tracking-tight">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#002B7F] tracking-tight">
               {viewMeta.title}
             </h1>
-            <span className="px-3 py-0.5 rounded-full text-xs font-black bg-[#E8F1FF] text-[#002B7F]">
+            <span className="px-3.5 py-1 rounded-full text-sm font-black bg-[#E8F1FF] text-[#002B7F] border border-[#B3D1FF]">
               {filteredDemandes.length}
             </span>
           </div>
-          <p className="text-xs text-[#475569] font-medium mt-1">
+          <p className="text-sm text-[#475569] font-semibold mt-1.5">
             {viewMeta.desc}
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex items-center gap-3 self-start sm:self-auto">
           {/* Action principale unique : Orange Vif (#FF5E00) */}
           <Link
             href="/demandes/nouvelle"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF5E00] hover:bg-[#E05200] text-white text-xs font-black transition-all duration-200 shadow-md active:scale-95"
+            className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#FF5E00] hover:bg-[#E05200] text-white text-sm font-black transition-all duration-200 shadow-md active:scale-95 cursor-pointer"
           >
             <span>Nouvelle demande</span>
           </Link>
@@ -170,8 +170,8 @@ export function DemandeList() {
       </div>
 
       {/* 2. BARRE DE RECHERCHE & FILTRES CATÉGORIE / URGENCE / TRI */}
-      <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,43,127,0.02)] space-y-3">
-        <div className="flex flex-col md:flex-row gap-3">
+      <div className="p-5 sm:p-6 bg-white rounded-3xl border border-slate-100 shadow-[0_4px_20px_rgba(0,43,127,0.03)] space-y-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           
           {/* Recherche */}
           <div className="relative flex-1 group">
@@ -180,16 +180,16 @@ export function DemandeList() {
               placeholder="Rechercher par référence (ex: DEM-001), objet ou description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 rounded-xl text-xs sm:text-sm text-[#071530] placeholder:text-[#64748b] focus:outline-none focus:border-[#B3D1FF] focus:bg-white transition-all font-semibold"
+              className="w-full px-5 py-3.5 bg-slate-50/80 hover:bg-slate-50 border border-slate-200 rounded-2xl text-sm sm:text-base text-[#071530] placeholder:text-[#64748b] focus:outline-none focus:border-[#002B7F] focus:bg-white transition-all font-semibold"
             />
           </div>
 
           {/* Filtres Catégorie, Urgence et Tri */}
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
             <select
               value={selectedCategorie}
               onChange={(e) => setSelectedCategorie(e.target.value)}
-              className="px-3 py-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 text-[#071530] font-bold rounded-xl text-xs focus:outline-none focus:border-[#B3D1FF] focus:bg-white cursor-pointer transition-all"
+              className="px-4 py-3.5 bg-slate-50/80 hover:bg-slate-50 border border-slate-200 text-[#071530] font-bold rounded-2xl text-xs sm:text-sm focus:outline-none focus:border-[#002B7F] focus:bg-white cursor-pointer transition-all"
             >
               <option value="all">Toutes catégories</option>
               {categories.map((c) => (
@@ -202,7 +202,7 @@ export function DemandeList() {
             <select
               value={selectedUrgence}
               onChange={(e) => setSelectedUrgence(e.target.value)}
-              className="px-3 py-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 text-[#071530] font-bold rounded-xl text-xs focus:outline-none focus:border-[#B3D1FF] focus:bg-white cursor-pointer transition-all"
+              className="px-4 py-3.5 bg-slate-50/80 hover:bg-slate-50 border border-slate-200 text-[#071530] font-bold rounded-2xl text-xs sm:text-sm focus:outline-none focus:border-[#002B7F] focus:bg-white cursor-pointer transition-all"
             >
               <option value="all">Toutes urgences</option>
               <option value="eleve">Élevée</option>
@@ -213,7 +213,7 @@ export function DemandeList() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'recent' | 'ancien' | 'urgence')}
-              className="px-3 py-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 text-[#071530] font-bold rounded-xl text-xs focus:outline-none focus:border-[#B3D1FF] focus:bg-white cursor-pointer transition-all"
+              className="px-4 py-3.5 bg-slate-50/80 hover:bg-slate-50 border border-slate-200 text-[#071530] font-bold rounded-2xl text-xs sm:text-sm focus:outline-none focus:border-[#002B7F] focus:bg-white cursor-pointer transition-all"
             >
               <option value="recent">Tri : Plus récent</option>
               <option value="ancien">Tri : Plus ancien</option>
@@ -226,23 +226,23 @@ export function DemandeList() {
 
       {/* 3. LISTE DES CARTES DEMANDES */}
       {loading ? (
-        <div className="py-20 text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-[#002B7F] mx-auto" />
-          <p className="text-xs text-[#475569] font-bold">Chargement de vos demandes...</p>
+        <div className="py-24 text-center space-y-4">
+          <Loader2 className="w-10 h-10 animate-spin text-[#002B7F] mx-auto" />
+          <p className="text-sm font-bold text-[#475569]">Chargement de vos demandes...</p>
         </div>
       ) : filteredDemandes.length === 0 ? (
-        <div className="p-12 sm:p-16 text-center bg-white border border-slate-100 rounded-3xl space-y-4 shadow-[0_2px_14px_rgba(0,43,127,0.02)]">
-          <div className="space-y-1">
-            <h3 className="text-sm font-black text-[#071530]">Aucune demande trouvée</h3>
-            <p className="text-xs text-[#475569] font-medium max-w-sm mx-auto">
-              {searchQuery || selectedCategorie !== 'all' || selectedUrgence !== 'all'
-                ? 'Aucune demande ne correspond à vos critères de recherche.'
-                : 'Vous n\'avez actuellement aucune demande dans cette vue.'}
-            </p>
-          </div>
+        <div className="py-16 px-6 bg-white border border-slate-100 rounded-3xl text-center space-y-3 shadow-xs">
+          <p className="text-base font-black text-[#071530]">
+            Aucune demande trouvée
+          </p>
+          <p className="text-sm text-[#475569] font-medium max-w-md mx-auto">
+            {searchQuery
+              ? 'Aucune demande ne correspond à vos critères de recherche.'
+              : 'Vous n\'avez actuellement aucune demande dans cette vue.'}
+          </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filteredDemandes.map((item) => {
             const statutLibelle = item.statut_details?.libelle || 'En attente';
 
@@ -250,50 +250,48 @@ export function DemandeList() {
               <Link
                 key={item.id}
                 href={`/demandes/${item.id}`}
-                className="block p-4 sm:p-5 bg-white border border-slate-100/90 hover:border-[#B3D1FF] rounded-2xl shadow-[0_2px_12px_rgba(0,43,127,0.03)] hover:shadow-[0_4px_16px_rgba(0,43,127,0.07)] transition-all duration-200 group"
+                className="block p-6 sm:p-7 bg-white border border-slate-100 hover:border-[#B3D1FF] rounded-3xl shadow-[0_2px_16px_rgba(0,43,127,0.03)] hover:shadow-[0_8px_28px_rgba(0,43,127,0.08)] transition-all duration-200 group"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
                   
                   {/* Gauche : Détails */}
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="font-mono text-xs font-black text-[#002B7F] bg-[#E8F1FF] px-2.5 py-0.5 rounded-lg">
+                  <div className="space-y-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="font-mono text-xs font-black text-[#002B7F] bg-[#E8F1FF] px-3 py-1 rounded-xl border border-[#B3D1FF]">
                         {item.reference || `DEM-${item.id}`}
                       </span>
 
                       <PriorityBadge urgence={item.urgence} />
 
-                      <SlaBadge demande={item} />
-
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-black bg-[#E8F1FF] text-[#002B7F]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#002B7F]" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-[#E8F1FF] text-[#002B7F] border border-[#B3D1FF]">
+                        <span className="w-2 h-2 rounded-full bg-[#002B7F]" />
                         {statutLibelle}
                       </span>
 
                       {item.categorie_details && (
-                        <span className="text-[11px] font-bold text-[#475569] bg-slate-50 px-2.5 py-0.5 rounded-lg">
+                        <span className="text-xs font-bold text-[#475569] bg-slate-100 px-3 py-1 rounded-xl">
                           {item.categorie_details.libelle}
                         </span>
                       )}
                     </div>
 
                     <div>
-                      <h2 className="text-base font-black text-[#071530] group-hover:text-[#002B7F] transition-colors">
+                      <h2 className="text-lg sm:text-xl font-black text-[#071530] group-hover:text-[#002B7F] transition-colors leading-snug">
                         {item.objet}
                       </h2>
-                      <p className="text-xs text-[#475569] line-clamp-1 mt-0.5 font-medium">
+                      <p className="text-sm text-[#475569] line-clamp-2 mt-1 font-medium leading-relaxed">
                         {item.description}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-4 text-xs text-[#475569] font-medium pt-1">
-                      <span>Date : {formatDate(item.date_creation)}</span>
+                    <div className="flex items-center gap-4 text-xs sm:text-sm text-[#475569] font-semibold pt-1">
+                      <span>Créée le : {formatDate(item.date_creation)}</span>
                     </div>
                   </div>
 
                   {/* Droite : Bouton secondaire */}
-                  <div className="flex items-center gap-1 px-3.5 py-2 rounded-xl bg-slate-50 group-hover:bg-[#E8F1FF] text-xs font-bold text-[#002B7F] transition-colors self-end sm:self-center">
-                    <span>Voir le détail</span>
+                  <div className="flex items-center gap-1 px-5 py-3 rounded-2xl bg-slate-50 group-hover:bg-[#E8F1FF] text-xs sm:text-sm font-black text-[#002B7F] transition-colors self-end md:self-center shrink-0 border border-slate-100 group-hover:border-[#B3D1FF]">
+                    <span>Voir le dossier &rarr;</span>
                   </div>
 
                 </div>

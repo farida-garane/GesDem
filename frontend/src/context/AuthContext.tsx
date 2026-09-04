@@ -24,20 +24,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
 
   const refreshUser = useCallback(async () => {
+    setIsLoading(true);
     try {
       const storedToken = typeof window !== 'undefined' ? localStorage.getItem('gesdem_token') : null;
       if (storedToken) {
         setToken(storedToken);
         const profile = await authService.getProfile();
         setUser(profile);
+      } else {
+        setUser(null);
+        setToken(null);
       }
     } catch {
       setUser(null);
       setToken(null);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -56,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile = await authService.getProfile();
       setUser(profile);
 
-      // Contrôle de rôle selon l'espace choisi
+      // Contrôle strict de rôle selon l'espace de connexion choisi
       if (targetEspace === 'admin' && profile.role !== 'admin') {
         authService.logout();
         setUser(null);
@@ -68,7 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authService.logout();
         setUser(null);
         setToken(null);
-        throw new Error("Accès refusé : Ce compte n'a pas les droits d'Intervenant / Gestionnaire. Veuillez contacter l'administrateur.");
+        throw new Error("Accès refusé : Ce compte n'a pas le rôle Intervenant (Services Généraux). Veuillez vous connecter avec vos identifiants d'intervenant.");
+      }
+
+      if (targetEspace === 'demandeur' && profile.role !== 'demandeur') {
+        authService.logout();
+        setUser(null);
+        setToken(null);
+        throw new Error("Accès refusé : Ce compte n'est pas un compte Demandeur standard.");
       }
 
       // Redirection vers l'espace approprié

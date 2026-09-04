@@ -39,7 +39,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-[1536px] items-center justify-between px-4 sm:px-6 lg:px-8">
         
         {/* 1. LOGO & IDENTITÉ DEMOPS */}
         <Link href={user ? '/demandes' : '/login'} className="flex items-center gap-3 group">
@@ -79,33 +79,33 @@ export function Header() {
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl bg-slate-50/80 hover:bg-[#E8F1FF] border border-slate-100 hover:border-[#B3D1FF] transition-all cursor-pointer group"
+                className="flex items-center gap-2.5 p-1.5 px-3 rounded-xl bg-slate-50/80 hover:bg-[#E8F1FF] border border-slate-100 hover:border-[#B3D1FF] transition-all cursor-pointer group"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#002B7F] flex items-center justify-center text-white font-black text-xs shadow-xs">
+                <div className="w-8 h-8 rounded-lg bg-[#002B7F] flex items-center justify-center text-white font-black text-xs shadow-xs shrink-0">
                   {(user.nom || user.email || 'U').charAt(0).toUpperCase()}
                 </div>
-                <div className="text-left hidden sm:block">
-                  <p className="text-xs font-black text-[#071530] leading-tight group-hover:text-[#002B7F] transition-colors truncate max-w-[120px]">
+                <div className="text-left flex flex-col">
+                  <p className="text-xs font-black text-[#071530] leading-tight group-hover:text-[#002B7F] transition-colors truncate max-w-[130px]">
                     {user.nom || user.email}
                   </p>
                   <p className="text-[10px] font-bold text-[#002B7F] capitalize">
-                    {user.role || 'Demandeur'}
+                    {user.role === 'technicien' ? 'Services Généraux' : user.role === 'admin' ? 'Administrateur' : 'Demandeur'}
                   </p>
                 </div>
               </button>
 
               {/* Dropdown Menu Profil */}
               {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-slate-100 shadow-[0_10px_30px_rgba(0,43,127,0.08)] p-2 space-y-1 z-50 animate-fade-in">
-                  <div className="p-3 border-b border-slate-100">
+                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-slate-100 shadow-[0_10px_30px_rgba(0,43,127,0.08)] p-2 space-y-1 z-50 animate-fade-in">
+                  <div className="p-3 border-b border-slate-100 space-y-1">
                     <p className="text-xs font-black text-[#071530] truncate">
                       {user.nom || user.email}
                     </p>
-                    <p className="text-[10px] font-semibold text-[#475569] truncate">
+                    <p className="text-[11px] font-semibold text-[#475569] truncate">
                       {user.email}
                     </p>
-                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-[#E8F1FF] text-[#002B7F]">
-                      Rôle : {user.role || 'Demandeur'}
+                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-[#E8F1FF] text-[#002B7F]">
+                      Rôle : {user.role === 'technicien' ? 'Services Généraux' : user.role === 'admin' ? 'Administrateur' : 'Demandeur'}
                     </span>
                   </div>
 

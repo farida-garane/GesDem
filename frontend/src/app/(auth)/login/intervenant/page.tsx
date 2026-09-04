@@ -24,7 +24,7 @@ export default function LoginIntervenantPage() {
     setIsLoading(true);
 
     try {
-      await login({ username, password }, 'technicien');
+      await login({ username: username.trim(), password }, 'technicien');
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -46,9 +46,6 @@ export default function LoginIntervenantPage() {
             <h1 className="text-2xl sm:text-3xl font-black text-[#002B7F] tracking-tight">
               Dem<span className="text-[#FF5E00]">Ops</span>
             </h1>
-            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-[#E8F1FF] text-[#002B7F] rounded-lg">
-              Intervenant
-            </span>
           </div>
           <p className="text-xs text-[#475569] font-medium">
             Support — Traitement &amp; Résolution des requêtes
@@ -67,7 +64,7 @@ export default function LoginIntervenantPage() {
         {/* Champ Identifiant */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
-            Identifiant Intervenant ou Email
+            Identifiant ou Email
           </label>
           <input
             type="text"
@@ -75,7 +72,7 @@ export default function LoginIntervenantPage() {
             onChange={(e) => setUsername(e.target.value)}
             required
             autoFocus
-            placeholder="Ex : identifiant.intervenant"
+            placeholder="Ex : joel ou joel@gmail.com"
             disabled={isLoading}
             className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
           />
@@ -98,14 +95,24 @@ export default function LoginIntervenantPage() {
               Mot de passe oublié ?
             </a>
           </div>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-            className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
+              className="w-full px-4 pr-11 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-100 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] placeholder-[#64748b] focus:outline-none transition-all font-semibold"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#475569] hover:text-[#002B7F] p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Bouton de Connexion : Orange Vif (#FF5E00) */}

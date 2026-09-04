@@ -1,5 +1,4 @@
 import { Demande } from '@/types/demande';
-import { calculateSla } from '@/utils/sla';
 
 /**
  * Exporte une liste de demandes au format CSV (compatible Excel avec encodage UTF-8 BOM).
@@ -22,7 +21,6 @@ export function exportDemandesToCsv(demandes: Demande[], filenamePrefix: string 
     'Urgence',
     'Statut',
     'Intervenant assigné',
-    'Délai / Statut SLA',
     'Date de clôture',
     'Note satisfaction',
   ];
@@ -34,7 +32,6 @@ export function exportDemandesToCsv(demandes: Demande[], filenamePrefix: string 
   };
 
   const rows = demandes.map((d) => {
-    const sla = calculateSla(d);
     const demandeurNom = d.demandeur?.nom || d.demandeur?.email || '';
     const demandeurEmail = d.demandeur?.email || '';
     const departement = d.demandeur?.departement || '';
@@ -55,7 +52,6 @@ export function exportDemandesToCsv(demandes: Demande[], filenamePrefix: string 
       escapeCsv(d.urgence.toUpperCase()),
       escapeCsv(statut),
       escapeCsv(technicien),
-      escapeCsv(sla.label),
       escapeCsv(d.date_cloture ? formatCsvDate(d.date_cloture) : ''),
       escapeCsv(note),
     ].join(';');

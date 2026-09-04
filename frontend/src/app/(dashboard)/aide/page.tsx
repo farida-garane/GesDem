@@ -10,7 +10,7 @@ export default function AidePage() {
       <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-black text-[#002B7F] tracking-tight">
-            Fiche d&apos;Assistance &amp; Diagnostics
+            Fiche d&apos;Assistance 
           </h1>
           <p className="text-xs sm:text-sm text-[#475569] font-medium max-w-2xl leading-relaxed">
             Ce document regroupe les vérifications rapides à effectuer en autonomie avant d&apos;ouvrir une demande, ainsi que les procédures pour les pannes matérielles nécessitant l&apos;intervention du support technique.
@@ -75,7 +75,7 @@ export default function AidePage() {
             2. Pannes Matérielles &amp; Procédures Techniques
           </h2>
           <p className="text-xs text-[#64748b] font-medium mt-0.5">
-            Cas nécessitant l&apos;intervention d&apos;un technicien ou des services généraux.
+            Cas nécessitant l&apos;intervention des Services Généraux.
           </p>
         </div>
 

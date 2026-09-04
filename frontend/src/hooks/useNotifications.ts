@@ -64,7 +64,7 @@ export function useNotifications() {
             generated.push({
               id: notifId,
               title: `Prise en charge : ${ref}`,
-              message: `L'intervenant ${d.technicien.nom || d.technicien.email} a pris en charge votre demande.`,
+              message: `Les Services Généraux (${d.technicien.nom || d.technicien.email}) ont pris en charge votre demande.`,
               timestamp: d.date_modification || d.date_creation,
               read: savedReadIds.includes(notifId),
               type: 'assigned',
@@ -73,7 +73,7 @@ export function useNotifications() {
             });
           }
         } else if (user.role === 'technicien' || user.role === 'admin') {
-          // Alertes pour les techniciens & admins
+          // Alertes pour les intervenants & admins
           if (d.urgence === 'eleve') {
             const notifId = `notif-urgent-${d.id}`;
             generated.push({
@@ -100,14 +100,44 @@ export function useNotifications() {
             });
           }
         }
+
+        // 4. Notifications pour les nouveaux messages reçus sur ce ticket
+        if (d.commentaires && d.commentaires.length > 0) {
+          d.commentaires.forEach((com) => {
+            const isMyComment =
+              (user.id && com.auteur === user.id) ||
+              (user.email && com.auteur_details?.email === user.email) ||
+              (user.nom && com.auteur_details?.nom === user.nom);
+
+            if (!isMyComment) {
+              const notifId = `notif-msg-${d.id}-${com.id}`;
+              const senderName = com.auteur_details?.nom || com.auteur_details?.email || 'Intervenant';
+              const ticketLink = user.role === 'demandeur' ? `/demandes/${d.id}` : `/interventions/${d.id}`;
+
+              generated.push({
+                id: notifId,
+                title: `Message reçu : ${ref}`,
+                message: `${senderName} : « ${com.contenu.length > 55 ? com.contenu.substring(0, 55) + '...' : com.contenu} »`,
+                timestamp: com.date_creation,
+                read: savedReadIds.includes(notifId),
+                type: 'info',
+                link: ticketLink,
+                demandeId: d.id,
+              });
+            }
+          });
+        }
       });
+
+      // Tri chronologique des notifications du plus récent au plus ancien
+      generated.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
       // Notification de bienvenue si aucune notification
       if (generated.length === 0) {
         const welcomeId = `welcome-${user.id || user.email}`;
         generated.push({
           id: welcomeId,
-          title: 'Bienvenue sur GesDem',
+          title: 'Bienvenue sur DemOps',
           message: 'Toutes vos notifications et alertes système apparaîtront ici.',
           timestamp: new Date().toISOString(),
           read: savedReadIds.includes(welcomeId),

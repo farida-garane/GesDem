@@ -203,8 +203,8 @@ export function ProfileView() {
         <div className="lg:col-span-4 space-y-4">
           <div className="p-6 astra-card rounded-3xl text-center space-y-5">
             
-            {/* Grand Avatar Élégant Dégradé Bleu & Orange */}
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-orange-500 text-white flex items-center justify-center text-3xl font-extrabold mx-auto shadow-md shadow-blue-500/20">
+            {/* Grand Avatar Élégant Bleu Roi Uni (#002B7F) */}
+            <div className="w-20 h-20 rounded-3xl bg-[#002B7F] text-white flex items-center justify-center text-3xl font-extrabold mx-auto shadow-md shadow-[#002B7F]/20">
               {initialLetter}
             </div>
 
@@ -223,8 +223,14 @@ export function ProfileView() {
                 <span className="text-slate-500 font-bold">
                   <span>Rôle</span>
                 </span>
-                <span className="font-extrabold text-orange-600 capitalize bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200/60">
-                  {profile?.role || ''}
+                <span className={`font-extrabold px-2.5 py-1 rounded-xl border ${
+                  profile?.role === 'technicien'
+                    ? 'text-orange-800 bg-orange-50 border-orange-200'
+                    : profile?.role === 'admin'
+                    ? 'text-indigo-800 bg-indigo-50 border-indigo-200'
+                    : 'text-blue-800 bg-blue-50 border-blue-200'
+                }`}>
+                  {profile?.role === 'technicien' ? 'Services Généraux' : profile?.role === 'admin' ? 'Administrateur' : 'Demandeur'}
                 </span>
               </div>
 

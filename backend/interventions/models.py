@@ -24,7 +24,7 @@ class EscaladeExterne(models.Model):
     STATUT_CHOICES = [
         ('en_attente_devis', 'En attente de devis'),
         ('en_cours_reparation', 'En cours de réparation / SAV'),
-        ('en_attente_livraison', 'En attente de pièces / livraison'),
+        ('en_attente_livraison', 'En attente de livraison'),
         ('repare_retourne', 'Réparé & retourné aux locaux'),
         ('annule', 'Annulé'),
     ]

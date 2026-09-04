@@ -2,19 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useNotifications, AppNotification } from '@/hooks/useNotifications';
-import {
-  Bell,
-  CheckCircle2,
-  AlertCircle,
-  Wrench,
-  Clock,
-  ExternalLink,
-  Check,
-  Trash2,
-  Flame,
-  Info
-} from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
+import { Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function NotificationDropdown() {
@@ -47,32 +36,6 @@ export function NotificationDropdown() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const getIcon = (type: AppNotification['type']) => {
-    switch (type) {
-      case 'resolved':
-        return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
-      case 'urgent':
-        return <Flame className="w-4 h-4 text-[#FF5E00]" />;
-      case 'assigned':
-        return <Wrench className="w-4 h-4 text-[#002B7F]" />;
-      default:
-        return <Info className="w-4 h-4 text-[#002B7F]" />;
-    }
-  };
-
-  const getBgIcon = (type: AppNotification['type']) => {
-    switch (type) {
-      case 'resolved':
-        return 'bg-emerald-50';
-      case 'urgent':
-        return 'bg-orange-50';
-      case 'assigned':
-        return 'bg-[#E8F1FF]';
-      default:
-        return 'bg-slate-50';
-    }
-  };
 
   const formatRelativeTime = (timestamp: string) => {
     try {
@@ -126,41 +89,35 @@ export function NotificationDropdown() {
               </h3>
               {unreadCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#E8F1FF] text-[#002B7F]">
-                  {unreadCount} new
+                  {unreadCount}
                 </span>
               )}
             </div>
 
             {notifications.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-[11px] font-bold text-[#002B7F] hover:underline flex items-center gap-1 cursor-pointer"
-                    title="Tout marquer comme lu"
+                    className="text-[11px] font-bold text-[#002B7F] hover:underline cursor-pointer"
                   >
-                    <Check className="w-3 h-3" />
-                    <span>Tout lire</span>
+                    Tout lire
                   </button>
                 )}
                 <button
                   onClick={clearAll}
-                  className="text-[11px] font-bold text-[#64748B] hover:text-rose-600 cursor-pointer p-1 rounded-lg hover:bg-rose-50 transition-colors"
-                  title="Effacer les notifications"
+                  className="text-[11px] font-bold text-[#64748B] hover:text-rose-600 cursor-pointer transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  Effacer
                 </button>
               </div>
             )}
           </div>
 
           {/* Corps de la liste */}
-          <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-50 p-1.5">
+          <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-50 p-2 space-y-1">
             {notifications.length === 0 ? (
               <div className="p-8 text-center space-y-2">
-                <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 mx-auto">
-                  <Bell className="w-5 h-5" />
-                </div>
                 <p className="text-xs font-bold text-[#071530]">Aucune notification</p>
                 <p className="text-[11px] text-[#64748B]">Vous êtes à jour dans vos alertes.</p>
               </div>
@@ -177,20 +134,14 @@ export function NotificationDropdown() {
                       if (notif.link) setIsOpen(false);
                     }}
                     className={cn(
-                      'p-3 rounded-2xl flex items-start gap-3 transition-colors cursor-pointer group block text-left',
+                      'p-3.5 rounded-2xl transition-colors cursor-pointer group block text-left',
                       notif.read
                         ? 'hover:bg-slate-50/80 opacity-75'
-                        : 'bg-[#F4F7FB]/70 hover:bg-[#E8F1FF]/60'
+                        : 'bg-[#F4F7FB]/80 hover:bg-[#E8F1FF]/60 border border-slate-100/60'
                     )}
                   >
-                    {/* Icône de type */}
-                    <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs mt-0.5', getBgIcon(notif.type))}>
-                      {getIcon(notif.type)}
-                    </div>
-
-                    {/* Contenu textuel */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between gap-2">
                         <p className={cn(
                           'text-xs truncate transition-colors',
                           notif.read ? 'font-bold text-[#1E293B]' : 'font-black text-[#071530] group-hover:text-[#002B7F]'
@@ -202,12 +153,11 @@ export function NotificationDropdown() {
                         )}
                       </div>
                       
-                      <p className="text-[11px] text-[#475569] font-medium line-clamp-2 mt-0.5 leading-snug">
+                      <p className="text-xs text-[#475569] font-medium line-clamp-2 leading-relaxed">
                         {notif.message}
                       </p>
 
-                      <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-[#64748B] font-semibold">
-                        <Clock className="w-3 h-3 text-[#002B7F]" />
+                      <div className="pt-1 text-[11px] text-[#64748B] font-semibold">
                         <span>{formatRelativeTime(notif.timestamp)}</span>
                       </div>
                     </div>
@@ -218,14 +168,13 @@ export function NotificationDropdown() {
           </div>
 
           {/* Pied de page dynamique et contextuel */}
-          <div className="p-2.5 bg-slate-50/60 border-t border-slate-100 text-center">
+          <div className="p-3 bg-slate-50/60 border-t border-slate-100 text-center">
             <Link
               href={footerLink.href}
               onClick={() => setIsOpen(false)}
-              className="text-[11px] font-bold text-[#002B7F] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-bold text-[#002B7F] hover:underline inline-block"
             >
-              <span>{footerLink.label}</span>
-              <ExternalLink className="w-3 h-3" />
+              <span>{footerLink.label} &rarr;</span>
             </Link>
           </div>
 

@@ -5,7 +5,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 def _get_base_email_template(title: str, preheader: str, content_html: str, action_url: str = None, action_text: str = None) -> str:
-    """Génère un template email HTML moderne aux couleurs de GesDem (#002B7F et #FF5E00)."""
+    """Génère un template email HTML moderne aux couleurs de DemOps (#002B7F et #FF5E00)."""
     action_button_html = ""
     if action_url and action_text:
         action_button_html = f"""
@@ -28,7 +28,7 @@ def _get_base_email_template(title: str, preheader: str, content_html: str, acti
             <!-- En-tête -->
             <div style="background-color: #002B7F; padding: 24px 32px; text-align: left;">
                 <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.5px;">
-                    Dem<span style="color: #FF5E00;">Ops</span>
+                  Dem<span style="color: #FF5E00;">Ops</span>
                 </h1>
                 <p style="color: #B3D1FF; margin: 4px 0 0 0; font-size: 12px; font-weight: 500;">Système de Gestion des Demandes d'Intervention</p>
             </div>
@@ -44,7 +44,7 @@ def _get_base_email_template(title: str, preheader: str, content_html: str, acti
 
             <!-- Pied de page -->
             <div style="background-color: #F8FAFC; padding: 20px 32px; border-top: 1px solid #F1F5F9; font-size: 11px; color: #64748B; text-align: center;">
-                <p style="margin: 0;">Ce message automatique vous a été envoyé par la plateforme interne <strong>GesDem</strong>.</p>
+                <p style="margin: 0;">Ce message automatique vous a été envoyé par la plateforme interne <strong>DemOps</strong>.</p>
                 <p style="margin: 4px 0 0 0;">Merci de ne pas répondre directement à cet email.</p>
             </div>
         </div>
@@ -97,7 +97,7 @@ def send_urgent_alert_email(demande, techniciens_emails):
     if not techniciens_emails:
         return
 
-    subject = f"🚨 [URGENT] Nouvelle intervention requise : {demande.reference} - {demande.objet}"
+    subject = f" [URGENT] Nouvelle intervention requise : {demande.reference} - {demande.objet}"
     
     content_html = f"""
     <p style="color: #E05200; font-weight: bold;">Une nouvelle demande marquée comme URGENTE nécessite une intervention rapide.</p>

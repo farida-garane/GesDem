@@ -2,19 +2,7 @@
 
 import React, { useState } from 'react';
 import { authService } from '@/services/auth.service';
-import { User, UserRole } from '@/types/user';
-import {
-  UserPlus,
-  X,
-  Loader2,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  User as UserIcon,
-  Wrench,
-  Shield,
-  Check
-} from 'lucide-react';
+import { UserRole } from '@/types/user';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -42,8 +30,8 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
       return;
     }
 
-    if (password.length < 6) {
-      setError('Le mot de passe doit comporter au moins 6 caractères.');
+    if (password.length < 4) {
+      setError('Le mot de passe doit comporter au moins 4 caractères.');
       return;
     }
 
@@ -75,60 +63,54 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="w-full max-w-lg bg-white border border-slate-200/90 shadow-2xl rounded-3xl p-6 sm:p-7 space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+      <div className="w-full max-w-xl bg-white border border-slate-200/90 shadow-2xl rounded-3xl p-6 sm:p-8 space-y-6">
         
         {/* En-tête */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs">
-              <UserPlus className="w-4 h-4 stroke-[2.2]" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900">Créer un nouveau compte</h3>
-              <p className="text-[11px] text-slate-500 font-medium">Attribuez directement un rôle et un département</p>
-            </div>
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div>
+            <h3 className="text-base font-black text-[#002B7F] tracking-tight">Inscrire un nouvel utilisateur</h3>
+            <p className="text-xs text-[#475569] font-medium mt-0.5">Attribuez directement le rôle Demandeur ou Intervenant</p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-xl text-slate-400 hover:text-[#071530] hover:bg-slate-100 transition-colors cursor-pointer flex items-center justify-center font-bold text-lg"
           >
-            <X className="w-4 h-4" />
+            &times;
           </button>
         </div>
 
         {error && (
-          <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 flex items-center gap-2 text-rose-800 text-xs font-bold">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{error}</span>
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold">
+            {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Nom d'utilisateur */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-slate-700 uppercase">
-                Nom d&apos;utilisateur *
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Nom complet / Identifiant */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
+                Identifiant ou Nom complet *
               </label>
               <input
                 type="text"
                 value={nom}
                 onChange={(e) => setNom(e.target.value)}
                 required
-                placeholder="Ex : moussa.traore"
+                placeholder="Ex : Kevin ou kevin.support"
                 disabled={isLoading}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium"
+                className="w-full px-4 py-3 bg-[#F4F7FB] border border-slate-200 rounded-2xl text-xs sm:text-sm text-[#071530] focus:bg-white focus:outline-none focus:border-[#002B7F] font-semibold"
               />
             </div>
 
             {/* Email */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-slate-700 uppercase">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
                 Email professionnel *
               </label>
               <input
@@ -136,119 +118,88 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="moussa@entreprise.com"
+                placeholder="kevin@entreprise.com"
                 disabled={isLoading}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium"
+                className="w-full px-4 py-3 bg-[#F4F7FB] border border-slate-200 rounded-2xl text-xs sm:text-sm text-[#071530] focus:bg-white focus:outline-none focus:border-[#002B7F] font-semibold"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Département */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-slate-700 uppercase">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
                 Département / Service
               </label>
               <input
                 type="text"
                 value={departement}
                 onChange={(e) => setDepartement(e.target.value)}
-                placeholder="Ex: RH, Comptabilité, IT..."
+                placeholder="Ex: Services Généraux, Informatique, RH..."
                 disabled={isLoading}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium"
+                className="w-full px-4 py-3 bg-[#F4F7FB] border border-slate-200 rounded-2xl text-xs sm:text-sm text-[#071530] focus:bg-white focus:outline-none focus:border-[#002B7F] font-semibold"
               />
             </div>
 
             {/* Mot de passe temporaire */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-slate-700 uppercase">
-                Mot de passe temporaire *
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="Minimum 6 caractères"
-                  disabled={isLoading}
-                  className="w-full px-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium"
-                />
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
+                  Mot de passe *
+                </label>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="text-xs font-bold text-[#002B7F] hover:underline"
                 >
-                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  {showPassword ? 'Masquer' : 'Afficher'}
                 </button>
               </div>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Mot de passe de connexion"
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-[#F4F7FB] border border-slate-200 rounded-2xl text-xs sm:text-sm text-[#071530] focus:bg-white focus:outline-none focus:border-[#002B7F] font-semibold"
+              />
             </div>
           </div>
 
-          {/* Rôle à attribuer */}
-          <div className="space-y-1.5 pt-1">
-            <label className="block text-[11px] font-bold text-slate-700 uppercase">
-              Rôle initial
+          {/* Attribution du Rôle par l'Administrateur sous forme de balise select */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
+              Rôle *
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setRole('demandeur')}
-                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                  role === 'demandeur'
-                    ? 'border-blue-600 bg-blue-50 text-blue-900 font-extrabold ring-1 ring-blue-500/30'
-                    : 'border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-xs'
-                }`}
-              >
-                <UserIcon className="w-4 h-4 mx-auto mb-1 text-blue-600" />
-                <span className="text-[11px] block truncate">Demandeur</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRole('technicien')}
-                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                  role === 'technicien'
-                    ? 'border-orange-500 bg-orange-50 text-orange-950 font-extrabold ring-1 ring-orange-500/30'
-                    : 'border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-xs'
-                }`}
-              >
-                <Wrench className="w-4 h-4 mx-auto mb-1 text-orange-600" />
-                <span className="text-[11px] block truncate">Intervenant</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRole('admin')}
-                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                  role === 'admin'
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-950 font-extrabold ring-1 ring-indigo-500/30'
-                    : 'border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-xs'
-                }`}
-              >
-                <Shield className="w-4 h-4 mx-auto mb-1 text-indigo-600" />
-                <span className="text-[11px] block truncate">Admin</span>
-              </button>
-            </div>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as UserRole)}
+              disabled={isLoading}
+              className="w-full px-4 py-3 bg-[#F4F7FB] hover:bg-white focus:bg-white border border-slate-200 hover:border-[#B3D1FF] focus:border-[#002B7F] rounded-2xl text-xs sm:text-sm text-[#071530] focus:outline-none transition-all font-semibold cursor-pointer"
+            >
+              <option value="demandeur">Demandeur (Collaborateur)</option>
+              <option value="technicien">Services Généraux</option>
+              <option value="admin">Administrateur (Direction)</option>
+            </select>
           </div>
 
           {/* Boutons d'action */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+              className="px-5 py-3 rounded-2xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-md shadow-blue-600/20 cursor-pointer flex items-center gap-1.5 active:scale-98 transition-all"
+              className="px-6 py-3 bg-[#FF5E00] hover:bg-[#E05200] text-white rounded-2xl text-xs font-black shadow-md cursor-pointer transition-all active:scale-95"
             >
-              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>Créer l&apos;utilisateur</span>
+              {isLoading ? 'Création en cours...' : 'Inscrire cet utilisateur'}
             </button>
           </div>
 

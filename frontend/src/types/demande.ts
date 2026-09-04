@@ -36,6 +36,7 @@ export interface Demande {
   piece_jointe?: string;
   demandeur: UserSummary;
   technicien?: UserSummary | null;
+  commentaires?: Commentaire[];
   date_creation: string;
   date_modification: string;
   date_cloture?: string | null;

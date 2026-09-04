@@ -118,7 +118,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
       try {
         await demandeService.createCommentaire(
           demande.id,
-          `🔄 [Ticket Rouvert par le demandeur] Motif : ${reopenMotif.trim()}`
+          ` [Ticket Rouvert par le demandeur] Motif : ${reopenMotif.trim()}`
         );
       } catch {
         // ignorer
@@ -256,7 +256,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-fade-in pb-16 relative">
+    <div className="w-full space-y-8 animate-fade-in pb-16 relative">
       
       {/* TOAST FLOTTANT DE NOTIFICATION */}
       {toast && (
@@ -476,9 +476,9 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <p className="text-slate-500 font-bold uppercase text-[10px]">Technicien ayant traité</p>
+                <p className="text-slate-500 font-bold uppercase text-[10px]">Intervenant (Services Généraux)</p>
                 <p className="text-slate-900 font-extrabold mt-0.5">
-                  {demande.technicien?.nom || 'Équipe Technique Support'}
+                  {demande.technicien?.nom || 'Services Généraux'}
                 </p>
               </div>
 
@@ -499,7 +499,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
 
             {demande.note_resolution && (
               <div className="pt-2">
-                <p className="text-slate-600 font-bold text-xs mb-1">Note de résolution du technicien :</p>
+                <p className="text-slate-600 font-bold text-xs mb-1">Note de résolution des Services Généraux :</p>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-800 font-medium leading-relaxed">
                   « {demande.note_resolution} »
                 </div>
@@ -568,15 +568,15 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
         </div>
 
         {/* Contacts & Responsables (1 colonne) */}
-        <div className="p-6 sm:p-7 bg-white border border-slate-100 rounded-3xl space-y-6 shadow-[0_2px_16px_rgba(0,43,127,0.03)]">
+        <div className="p-6 sm:p-7 bg-white border border-slate-100 rounded-3xl space-y-5 shadow-[0_2px_16px_rgba(0,43,127,0.03)]">
           <div className="pb-3 border-b border-slate-100">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[#002B7F]">
-              Intervenants &amp; Contacts
+              Acteurs &amp; Contact
             </h2>
           </div>
 
           {/* Demandeur */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Demandeur</p>
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
               <p className="text-xs font-bold text-slate-900 truncate">
@@ -588,19 +588,18 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
             </div>
           </div>
 
-          {/* Technicien assigné */}
+          {/* Services Généraux / Intervenant assigné */}
           <div className="space-y-2 pt-2 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Technicien assigné</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Services Généraux / Intervenant</p>
             {demande.technicien ? (
               <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100">
                 <p className="text-xs font-bold text-[#002B7F] truncate">
                   {demande.technicien.nom || demande.technicien.email}
                 </p>
-                <p className="text-[11px] text-[#002B7F] font-bold">En charge du ticket</p>
               </div>
             ) : (
               <div className="p-3 rounded-2xl bg-[#E8F1FF] text-xs text-[#002B7F] font-medium">
-                En attente d&apos;attribution à un technicien.
+                En attente de prise en charge par les Services Généraux.
               </div>
             )}
           </div>
@@ -619,19 +618,16 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
             </h2>
           </div>
 
-          <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#B3D1FF]">
+          <div className="space-y-3">
             {historique.map((item, idx) => (
-              <div key={item.id || idx} className="relative">
-                <span className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-white bg-[#002B7F]" />
-                <div className="space-y-0.5">
-                  <p className="text-xs font-bold text-slate-900">
-                    Statut : <span className="text-[#002B7F]">{item.nouveau_statut?.libelle || 'Enregistré'}</span>
-                  </p>
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    {formatDateTime(item.date_changement)}
-                    {item.modifie_par && ` · par ${item.modifie_par.nom || item.modifie_par.email}`}
-                  </p>
-                </div>
+              <div key={item.id || idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                <p className="text-xs font-bold text-slate-900">
+                  Statut : <span className="text-[#002B7F] font-black">{item.nouveau_statut?.libelle || 'Enregistré'}</span>
+                </p>
+                <p className="text-xs text-[#475569] font-medium">
+                  {formatDateTime(item.date_changement)}
+                  {item.modifie_par && ` · par ${item.modifie_par.nom || item.modifie_par.email}`}
+                </p>
               </div>
             ))}
           </div>
@@ -642,11 +638,8 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#002B7F]">
-                Commentaires &amp; Échanges
+                Messages
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E8F1FF] text-[#002B7F]">
-                {commentaires.length} message{commentaires.length > 1 ? 's' : ''}
-              </span>
             </div>
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">

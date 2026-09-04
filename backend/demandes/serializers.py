@@ -19,11 +19,19 @@ class DemandeurSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'nom', 'email', 'role']
 
+class DemandeCommentaireSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    auteur = serializers.IntegerField(source='auteur_id', read_only=True)
+    auteur_details = DemandeurSerializer(source='auteur', read_only=True)
+    contenu = serializers.CharField(read_only=True)
+    date_creation = serializers.DateTimeField(read_only=True)
+
 class DemandeSerializer(serializers.ModelSerializer):
     demandeur = DemandeurSerializer(read_only=True)
     technicien = DemandeurSerializer(read_only=True)
     categorie_details = CategorieSerializer(source='categorie', read_only=True)
     statut_details = StatutSerializer(source='statut', read_only=True)
+    commentaires = DemandeCommentaireSerializer(many=True, read_only=True)
 
     class Meta:
         model = Demande
@@ -41,6 +49,7 @@ class DemandeSerializer(serializers.ModelSerializer):
             'piece_jointe',
             'demandeur',
             'technicien',
+            'commentaires',
             'date_creation',
             'date_modification',
             'date_cloture'

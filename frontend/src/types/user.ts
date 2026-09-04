@@ -44,3 +44,12 @@ export interface UpdateUserRolePayload {
   role: UserRole;
   is_active?: boolean;
 }
+
+export interface UpdateUserAdminPayload {
+  nom?: string;
+  email?: string;
+  departement?: string;
+  role: UserRole;
+  is_active?: boolean;
+  password?: string;
+}
