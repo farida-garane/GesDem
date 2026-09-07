@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 export function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const isProfilRoute = pathname.startsWith('/profil');
   const isInterventionsRoute = pathname.startsWith('/interventions');

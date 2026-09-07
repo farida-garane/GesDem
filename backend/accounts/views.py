@@ -79,8 +79,11 @@ class UserListView(generics.ListAPIView):
         if (user.is_superuser or user.is_staff) and user.role != 'admin':
             user.role = 'admin'
             user.save(update_fields=['role'])
-        if user.role != 'admin' and not user.is_superuser and not user.is_staff:
-            raise PermissionDenied("Réservé aux administrateurs.")
+        if user.role not in ['admin', 'technicien'] and not user.is_superuser and not user.is_staff:
+            raise PermissionDenied("Réservé aux intervenants et administrateurs.")
+        role_param = self.request.query_params.get('role')
+        if role_param:
+            return User.objects.filter(role=role_param).order_by('id')
         return User.objects.all().order_by('id')
 
 class UserUpdateView(generics.RetrieveUpdateDestroyAPIView):

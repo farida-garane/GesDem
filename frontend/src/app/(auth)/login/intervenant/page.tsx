@@ -24,7 +24,7 @@ export default function LoginIntervenantPage() {
     setIsLoading(true);
 
     try {
-      await login({ username: username.trim(), password }, 'technicien');
+      await login({ username: username.trim(), password });
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);

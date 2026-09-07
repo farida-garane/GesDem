@@ -7,14 +7,17 @@ import { PriorityBadge } from '@/components/ui/PriorityBadge';
 import { SlaBadge } from '@/components/ui/SlaBadge';
 import { useAuth } from '@/context/AuthContext';
 import { demandeService } from '@/services/demande.service';
+import { authService } from '@/services/auth.service';
 import { escaladeService } from '@/services/escalade.service';
 import { Demande, Statut, HistoriqueStatut, Commentaire } from '@/types/demande';
+import { User } from '@/types/user';
 import { EscaladeExterne } from '@/types/escalade';
 import { EscaladeExterneModal } from '@/features/interventions/components/EscaladeExterneModal';
 import { JournalExterneSection } from '@/features/interventions/components/JournalExterneSection';
 import {
   Loader2,
-  X
+  X,
+  UserCheck
 } from 'lucide-react';
 
 interface InterventionDetailProps {
@@ -39,6 +42,7 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
   const [historique, setHistorique] = useState<HistoriqueStatut[]>([]);
   const [commentaires, setCommentaires] = useState<Commentaire[]>([]);
   const [escalades, setEscalades] = useState<EscaladeExterne[]>([]);
+  const [techniciens, setTechniciens] = useState<User[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,17 +59,17 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
 
   // Status update state
   const [updatingStatut, setUpdatingStatut] = useState(false);
-  const [assigningSelf, setAssigningSelf] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
 
   // Modale d'Escalade vers Prestataire Externe
   const [isEscaladeModalOpen, setIsEscaladeModalOpen] = useState(false);
 
-  // Modale de Résolution & Décision
+  // Modale de Résolution avec note obligatoire
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
   const [noteResolution, setNoteResolution] = useState('');
   const [isSubmittingResolution, setIsSubmittingResolution] = useState(false);
 
-  // New Comment state
+  // Commentaires internes
   const [nouveauCommentaire, setNouveauCommentaire] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
 
@@ -75,12 +79,13 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
       setLoading(true);
       setError(null);
 
-      const [demandeData, statutsData, historiqueData, commentairesData, escaladesData] = await Promise.all([
+      const [demandeData, statutsData, historiqueData, commentairesData, escaladesData, usersData] = await Promise.all([
         demandeService.getDemandeById(demandeId),
         demandeService.getStatuts(),
         demandeService.getDemandeHistorique(demandeId),
         demandeService.getCommentaires(demandeId),
         escaladeService.getEscalades(demandeId),
+        authService.getUsers().catch(() => []),
       ]);
 
       setDemande(demandeData);
@@ -88,6 +93,9 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
       setHistorique(historiqueData);
       setCommentaires(commentairesData);
       setEscalades(escaladesData);
+      setTechniciens(
+        (usersData || []).filter((u: User) => u.role === 'technicien' || u.role === 'admin')
+      );
 
       if (demandeData?.note_resolution) {
         setNoteResolution(demandeData.note_resolution);
@@ -118,22 +126,37 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
     }
   };
 
-  // Handle self-assignment
-  const handleAssignToMe = async () => {
-    if (!demande || !user) return;
-    setAssigningSelf(true);
+  // Handle assignment to specific technician or unassign
+  const handleAssignTechnicien = async (techId: number | null) => {
+    if (!demande) return;
+    setIsAssigning(true);
     try {
-      const statutEnCours = statuts.find((s) => s.libelle.toLowerCase().includes('cours') || s.ordre === 2);
+      const statutEnCours = statuts.find(
+        (s) => s.libelle.toLowerCase().includes('cours') || s.ordre === 2
+      );
       await demandeService.updateDemandeStatut(demande.id, {
-        technicien: user.id,
-        ...(statutEnCours ? { statut: statutEnCours.id } : {}),
+        technicien: techId,
+        ...(techId && (!demande.statut || demande.statut === 1)
+          ? { statut: statutEnCours ? statutEnCours.id : 2 }
+          : {}),
       });
-      showToast('Vous avez pris en charge ce dossier.', 'success');
+
+      const selectedUser = techniciens.find((t) => t.id === techId);
+      if (techId) {
+        showToast(
+          selectedUser && selectedUser.id === user?.id
+            ? 'Vous avez pris en charge ce dossier.'
+            : `Dossier assigné avec succès à ${selectedUser?.nom || selectedUser?.username || selectedUser?.email || 'l’intervenant'}.`,
+          'success'
+        );
+      } else {
+        showToast('Demande désassignée et remise en file d’attente.', 'info');
+      }
       await loadData();
-    } catch (err: unknown)  {
-      showToast(err instanceof Error ? err.message : "Erreur lors de la prise en charge", 'error');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Erreur lors de l'assignation", 'error');
     } finally {
-      setAssigningSelf(false);
+      setIsAssigning(false);
     }
   };
 
@@ -179,7 +202,6 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
       setNouveauCommentaire('');
       const updatedComments = await demandeService.getCommentaires(demande.id);
       setCommentaires(updatedComments);
-      showToast('Message publié dans le journal.', 'success');
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : "Erreur lors de l'envoi du message", 'error');
     } finally {
@@ -351,33 +373,102 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
               Intervenant &amp; Traitement
             </h2>
 
-            {/* Intervenant assigné */}
-            <div className="py-3">
+            {/* Intervenant assigné & Sélecteur d'assignation */}
+            <div className="py-3 space-y-3">
               {demande.technicien ? (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#E8F1FF] border border-[#B3D1FF]">
-                  <div className="w-9 h-9 rounded-lg bg-[#002B7F] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-                    {(demande.technicien.nom || demande.technicien.email || 'I').charAt(0).toUpperCase()}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#E8F1FF] border border-[#B3D1FF]">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-9 h-9 rounded-lg bg-[#002B7F] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                        {(demande.technicien.nom || demande.technicien.email || 'I').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="truncate">
+                        <p className="text-[10px] font-bold text-[#002B7F] uppercase tracking-wider">
+                          Assigné à :
+                        </p>
+                        <p className="text-xs font-black text-[#071530] truncate">
+                          {demande.technicien.nom || demande.technicien.email}
+                          {demande.technicien.id === user?.id && ' (Vous)'}
+                        </p>
+                      </div>
+                    </div>
+                    {isAssigning && <Loader2 className="w-4 h-4 animate-spin text-[#002B7F] shrink-0" />}
                   </div>
-                  <div className="truncate">
-                    <p className="text-xs font-bold text-[#071530] truncate">
-                      {demande.technicien.nom || demande.technicien.email}
-                    </p>
+
+                  {/* Menu déroulant pour Réassigner à un autre collègue */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569]">
+                      Réassigner ce dossier :
+                    </label>
+                    <select
+                      value={demande.technicien.id || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleAssignTechnicien(val ? Number(val) : null);
+                      }}
+                      disabled={isAssigning}
+                      className="w-full px-3 py-2 bg-white border border-[#CBD5E1] hover:border-[#002B7F] focus:border-[#002B7F] rounded-xl text-xs font-bold text-[#071530] focus:outline-none cursor-pointer transition-all"
+                    >
+                      <option value={demande.technicien.id}>
+                        {demande.technicien.nom || demande.technicien.email} (Actuel)
+                      </option>
+                      {techniciens
+                        .filter((t) => t.id !== demande.technicien?.id)
+                        .map((tech) => (
+                          <option key={tech.id} value={tech.id}>
+                            {tech.nom || tech.username || tech.email} {tech.id === user?.id ? '(Vous)' : ''}
+                          </option>
+                        ))}
+                      <option value="">-- Désassigner (remettre en file d&apos;attente) --</option>
+                    </select>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="p-3 rounded-xl bg-[#E8F1FF] border border-[#B3D1FF] text-xs text-[#002B7F] font-bold">
                     <span>En attente de prise en charge par un intervenant.</span>
                   </div>
-                  {/* Action principale : Orange de l'affiche (#FF5E00) */}
-                  <button
-                    onClick={handleAssignToMe}
-                    disabled={assigningSelf}
-                    className="w-full flex items-center justify-center bg-[#FF5E00] hover:bg-[#E05200] text-white rounded-xl text-xs font-black py-3 active:scale-95 transition-all cursor-pointer shadow-md"
-                  >
-                    {assigningSelf && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                    <span>Prendre en charge ce dossier</span>
-                  </button>
+
+                  {/* 1. Bouton rapide : M'assigner à moi-même */}
+                  {user && (
+                    <button
+                      onClick={() => handleAssignTechnicien(user.id)}
+                      disabled={isAssigning}
+                      className="w-full flex items-center justify-center gap-1.5 bg-[#FF5E00] hover:bg-[#E05200] text-white rounded-xl text-xs font-black py-3 active:scale-95 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                    >
+                      {isAssigning ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                      ) : (
+                        <UserCheck className="w-4 h-4" />
+                      )}
+                      <span>Prendre en charge (M&apos;assigner)</span>
+                    </button>
+                  )}
+
+                  {/* 2. Menu déroulant : Assigner à un autre collègue */}
+                  <div className="space-y-1 pt-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569]">
+                      Ou assigner à un collègue :
+                    </label>
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) handleAssignTechnicien(Number(val));
+                      }}
+                      disabled={isAssigning}
+                      className="w-full px-3 py-2 bg-white border border-[#CBD5E1] hover:border-[#002B7F] focus:border-[#002B7F] rounded-xl text-xs font-bold text-[#071530] focus:outline-none cursor-pointer transition-all"
+                    >
+                      <option value="" disabled>
+                        Choisir un membre des Services Généraux...
+                      </option>
+                      {techniciens.map((tech) => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.nom || tech.username || tech.email} {tech.id === user?.id ? '(Vous)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
             </div>

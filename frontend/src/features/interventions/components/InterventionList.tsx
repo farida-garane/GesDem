@@ -27,7 +27,7 @@ export function InterventionList() {
     }
   }, [user, authLoading, router]);
 
-  const currentVue = searchParams.get('vue') || 'all';
+  const currentVue = searchParams.get('vue') || 'dashboard';
 
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
@@ -104,6 +104,13 @@ export function InterventionList() {
           item.statut_details?.libelle?.toLowerCase().includes('attente') ||
           item.statut === 1;
         if (!isAttente) return false;
+      } else if (currentVue === 'traitement') {
+        const isTraitement =
+          item.statut_details?.libelle?.toLowerCase().includes('cours') ||
+          item.statut_details?.libelle?.toLowerCase().includes('assign') ||
+          item.statut === 2 ||
+          item.statut === 3;
+        if (!isTraitement) return false;
       }
 
       // 2. Filtre par catégorie
@@ -146,10 +153,18 @@ export function InterventionList() {
     });
   }, [demandes, currentVue, selectedCategorie, selectedUrgence, searchQuery, sortBy, user]);
 
-  const viewTitles = {
+  const viewTitles: Record<string, { title: string; desc: string }> = {
+    dashboard: {
+      title: 'Tableau de bord des interventions',
+      desc: "Vue d'ensemble de l'activité, métriques et file d'attente globale.",
+    },
     all: {
       title: 'Toutes les demandes à traiter',
       desc: "File d'attente globale de toutes les requêtes internes de l'entreprise.",
+    },
+    traitement: {
+      title: 'Dossiers en traitement',
+      desc: 'Gestion des statuts, assignation et résolution des demandes.',
     },
     mes_interventions: {
       title: 'Mes dossiers pris en charge',
@@ -161,7 +176,7 @@ export function InterventionList() {
     },
   };
 
-  const currentMeta = viewTitles[currentVue as keyof typeof viewTitles] || viewTitles.all;
+  const currentMeta = viewTitles[currentVue] || viewTitles.dashboard;
 
   const formatDate = (dateString: string) => {
     try {
@@ -208,7 +223,55 @@ export function InterventionList() {
         </div>
       </div>
 
-      {/* 2. BARRE DE RECHERCHE ET FILTRES */}
+      {/* 2. DASHBOARD KPI — visible uniquement sur le Tableau de bord des interventions */}
+      {(currentVue === 'dashboard' || currentVue === 'all') && !loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total */}
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#002B7F]">Total Dossiers</span>
+            <span className="text-4xl font-black text-[#002B7F] leading-none">{demandes.length}</span>
+            <span className="text-xs font-semibold text-slate-400 mt-1">requêtes globales</span>
+          </div>
+
+          {/* En attente */}
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#002B7F]">À Prendre en Charge</span>
+            <span className="text-4xl font-black text-[#002B7F] leading-none">
+              {demandes.filter(d => {
+                const lib = d.statut_details?.libelle?.toLowerCase() || '';
+                return !d.technicien || lib.includes('attente') || d.statut === 1;
+              }).length}
+            </span>
+            <span className="text-xs font-semibold text-slate-400 mt-1">sans intervenant</span>
+          </div>
+
+          {/* En cours */}
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#002B7F]">En Traitement</span>
+            <span className="text-4xl font-black text-[#FF5E00] leading-none">
+              {demandes.filter(d => {
+                const lib = d.statut_details?.libelle?.toLowerCase() || '';
+                return lib.includes('cours') || lib.includes('assign') || d.statut === 2 || d.statut === 3;
+              }).length}
+            </span>
+            <span className="text-xs font-semibold text-slate-400 mt-1">interventions actives</span>
+          </div>
+
+          {/* Résolues */}
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#002B7F]">Résolues</span>
+            <span className="text-4xl font-black text-[#002B7F] leading-none">
+              {demandes.filter(d => {
+                const lib = d.statut_details?.libelle?.toLowerCase() || '';
+                return lib.includes('resolu') || lib.includes('cloture') || lib.includes('termin') || d.statut === 4 || d.statut === 5;
+              }).length}
+            </span>
+            <span className="text-xs font-semibold text-slate-400 mt-1">dossiers clôturés</span>
+          </div>
+        </div>
+      )}
+
+      {/* 3. BARRE DE RECHERCHE ET FILTRES */}
       <div className="p-5 sm:p-6 bg-white rounded-3xl border border-slate-100 shadow-[0_4px_20px_rgba(0,43,127,0.03)] space-y-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Recherche */}

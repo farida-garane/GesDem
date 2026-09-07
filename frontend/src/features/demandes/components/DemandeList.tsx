@@ -169,7 +169,48 @@ export function DemandeList() {
         </div>
       </div>
 
-      {/* 2. BARRE DE RECHERCHE & FILTRES CATÉGORIE / URGENCE / TRI */}
+      {/* 2. DASHBOARD KPI — uniquement sur "Toutes les demandes" */}
+      {currentStatut === 'all' && !loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#002B7F]">Total</span>
+            <span className="text-4xl font-black text-[#002B7F] leading-none">{demandes.length}</span>
+            <span className="text-xs font-semibold text-slate-400 mt-1">demandes soumises</span>
+          </div>
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#002B7F]">En attente</span>
+            <span className="text-4xl font-black text-[#002B7F] leading-none">
+              {demandes.filter(d => {
+                const lib = d.statut_details?.libelle?.toLowerCase() || '';
+                return lib.includes('attente') || d.statut === 1;
+              }).length}
+            </span>
+            <span className="text-xs font-semibold text-slate-400 mt-1">non prises en charge</span>
+          </div>
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#002B7F]">En cours</span>
+            <span className="text-4xl font-black text-[#FF5E00] leading-none">
+              {demandes.filter(d => {
+                const lib = d.statut_details?.libelle?.toLowerCase() || '';
+                return lib.includes('cours') || lib.includes('assign') || d.statut === 2 || d.statut === 3;
+              }).length}
+            </span>
+            <span className="text-xs font-semibold text-slate-400 mt-1">en traitement</span>
+          </div>
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#002B7F]">Résolues</span>
+            <span className="text-4xl font-black text-[#002B7F] leading-none">
+              {demandes.filter(d => {
+                const lib = d.statut_details?.libelle?.toLowerCase() || '';
+                return lib.includes('resolu') || lib.includes('cloture') || lib.includes('termin') || d.statut === 4 || d.statut === 5;
+              }).length}
+            </span>
+            <span className="text-xs font-semibold text-slate-400 mt-1">clôturées</span>
+          </div>
+        </div>
+      )}
+
+      {/* 3. BARRE DE RECHERCHE & FILTRES CATÉGORIE / URGENCE / TRI */}
       <div className="p-5 sm:p-6 bg-white rounded-3xl border border-slate-100 shadow-[0_4px_20px_rgba(0,43,127,0.03)] space-y-4">
         <div className="flex flex-col lg:flex-row gap-4">
           

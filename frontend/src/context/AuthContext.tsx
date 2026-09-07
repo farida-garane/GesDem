@@ -9,10 +9,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (
-    credentials: { username: string; password: string },
-    targetEspace?: 'demandeur' | 'technicien' | 'admin'
-  ) => Promise<void>;
+  login: (credentials: { username: string; password: string }) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
@@ -51,10 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  const login = async (
-    credentials: { username: string; password: string },
-    targetEspace?: 'demandeur' | 'technicien' | 'admin'
-  ) => {
+  const login = async (credentials: { username: string; password: string }) => {
     setIsLoading(true);
     try {
       const response = await authService.login(credentials);
@@ -62,36 +56,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile = await authService.getProfile();
       setUser(profile);
 
-      // Contrôle strict de rôle selon l'espace de connexion choisi
-      if (targetEspace === 'admin' && profile.role !== 'admin') {
-        authService.logout();
-        setUser(null);
-        setToken(null);
-        throw new Error("Accès refusé : Ce compte ne dispose pas des privilèges d'Administrateur.");
-      }
-
-      if (targetEspace === 'technicien' && profile.role !== 'technicien' && profile.role !== 'admin') {
-        authService.logout();
-        setUser(null);
-        setToken(null);
-        throw new Error("Accès refusé : Ce compte n'a pas le rôle Intervenant (Services Généraux). Veuillez vous connecter avec vos identifiants d'intervenant.");
-      }
-
-      if (targetEspace === 'demandeur' && profile.role !== 'demandeur') {
-        authService.logout();
-        setUser(null);
-        setToken(null);
-        throw new Error("Accès refusé : Ce compte n'est pas un compte Demandeur standard.");
-      }
-
-      // Redirection vers l'espace approprié
-      if (targetEspace === 'admin' || (!targetEspace && profile.role === 'admin')) {
+      // Redirection automatique selon le rôle réel — aucune restriction de page
+      if (profile.role === 'admin') {
         router.push('/admin');
-      } else if (targetEspace === 'technicien' || (!targetEspace && profile.role === 'technicien')) {
+      } else if (profile.role === 'technicien') {
         router.push('/interventions');
       } else {
         router.push('/demandes');
       }
+    } catch (error) {
+      throw error;
     } finally {
       setIsLoading(false);
     }

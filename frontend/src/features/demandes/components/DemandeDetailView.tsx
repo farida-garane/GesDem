@@ -4,13 +4,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
 import { SlaBadge } from '@/components/ui/SlaBadge';
+import { useAuth } from '@/context/AuthContext';
 import { demandeService } from '@/services/demande.service';
+import { authService } from '@/services/auth.service';
 import { escaladeService } from '@/services/escalade.service';
-import { Demande, HistoriqueStatut, Commentaire, UrgenceLevel } from '@/types/demande';
+import { Demande, Statut, HistoriqueStatut, Commentaire, UrgenceLevel } from '@/types/demande';
+import { User } from '@/types/user';
 import { EscaladeExterne } from '@/types/escalade';
 import {
   Loader2,
-  X
+  X,
+  UserCheck
 } from 'lucide-react';
 
 interface DemandeDetailViewProps {
@@ -18,13 +22,18 @@ interface DemandeDetailViewProps {
 }
 
 export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
+  const { user } = useAuth();
   const [demande, setDemande] = useState<Demande | null>(null);
+  const [statuts, setStatuts] = useState<Statut[]>([]);
   const [historique, setHistorique] = useState<HistoriqueStatut[]>([]);
   const [commentaires, setCommentaires] = useState<Commentaire[]>([]);
   const [escalades, setEscalades] = useState<EscaladeExterne[]>([]);
+  const [techniciens, setTechniciens] = useState<User[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [isUpdatingStatut, setIsUpdatingStatut] = useState(false);
 
   // Toast Notification State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -63,17 +72,23 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
       setLoading(true);
       setError(null);
 
-      const [demandeData, historiqueData, commentairesData, escaladesData] = await Promise.all([
+      const [demandeData, statutsData, historiqueData, commentairesData, escaladesData, usersData] = await Promise.all([
         demandeService.getDemandeById(demandeId),
+        demandeService.getStatuts().catch(() => []),
         demandeService.getDemandeHistorique(demandeId),
         demandeService.getCommentaires(demandeId),
         escaladeService.getEscalades(demandeId),
+        authService.getUsers().catch(() => []),
       ]);
 
       setDemande(demandeData);
+      setStatuts(statutsData || []);
       setHistorique(historiqueData);
       setCommentaires(commentairesData);
       setEscalades(escaladesData);
+      setTechniciens(
+        (usersData || []).filter((u: User) => u.role === 'technicien' || u.role === 'admin')
+      );
 
       if (demandeData) {
         setEditObjet(demandeData.objet);
@@ -90,6 +105,55 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Assigner / Réassigner / Désassigner un intervenant (Admin & Services Généraux)
+  const handleAssignTechnicien = async (techId: number | null) => {
+    if (!demande) return;
+    setIsAssigning(true);
+    try {
+      const statutEnCours = statuts.find(
+        (s) => s.libelle.toLowerCase().includes('cours') || s.ordre === 2
+      );
+      await demandeService.updateDemandeStatut(demande.id, {
+        technicien: techId,
+        ...(techId && (!demande.statut || demande.statut === 1)
+          ? { statut: statutEnCours ? statutEnCours.id : 2 }
+          : {}),
+      });
+
+      const selectedUser = techniciens.find((t) => t.id === techId);
+      if (techId) {
+        showToast(
+          selectedUser && selectedUser.id === user?.id
+            ? 'Vous avez pris en charge ce dossier.'
+            : `Dossier assigné avec succès à ${selectedUser?.nom || selectedUser?.username || selectedUser?.email || 'l’intervenant'}.`,
+          'success'
+        );
+      } else {
+        showToast('Intervenant retiré. La demande est remise en file d’attente.', 'info');
+      }
+      await loadData();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Erreur lors de l'assignation", 'error');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  // Mettre à jour le statut par l'admin
+  const handleAdminStatutChange = async (statutId: number) => {
+    if (!demande || demande.statut === statutId) return;
+    setIsUpdatingStatut(true);
+    try {
+      await demandeService.updateDemandeStatut(demande.id, { statut: statutId });
+      showToast('Statut mis à jour avec succès.', 'success');
+      await loadData();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Erreur lors du changement de statut', 'error');
+    } finally {
+      setIsUpdatingStatut(false);
+    }
+  };
 
   // Validation de Clôture définitive par le demandeur
   const handleConfirmClosure = async () => {
@@ -144,7 +208,6 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
       const added = await demandeService.createCommentaire(demande.id, nouveauCommentaire.trim());
       setCommentaires((prev) => [...prev, added]);
       setNouveauCommentaire('');
-      showToast('Commentaire publié avec succès !', 'success');
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : "Erreur lors de l'envoi", 'error');
     } finally {
@@ -589,17 +652,101 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
           </div>
 
           {/* Services Généraux / Intervenant assigné */}
-          <div className="space-y-2 pt-2 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Services Généraux / Intervenant</p>
-            {demande.technicien ? (
-              <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100">
-                <p className="text-xs font-bold text-[#002B7F] truncate">
-                  {demande.technicien.nom || demande.technicien.email}
-                </p>
-              </div>
+          <div className="space-y-2.5 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                Services Généraux / Intervenant
+              </p>
+              {isAssigning && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#002B7F]" />}
+            </div>
+
+            {/* Vue normale / Demandeur */}
+            {user?.role !== 'admin' && user?.role !== 'technicien' ? (
+              demande.technicien ? (
+                <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100">
+                  <p className="text-xs font-bold text-[#002B7F] truncate">
+                    {demande.technicien.nom || demande.technicien.email}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 rounded-2xl bg-[#E8F1FF] text-xs text-[#002B7F] font-medium">
+                  En attente de prise en charge par les Services Généraux.
+                </div>
+              )
             ) : (
-              <div className="p-3 rounded-2xl bg-[#E8F1FF] text-xs text-[#002B7F] font-medium">
-                En attente de prise en charge par les Services Généraux.
+              /* Vue Supervision Administrateur & Intervenant */
+              <div className="space-y-3">
+                {demande.technicien ? (
+                  <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100 space-y-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-xl bg-[#002B7F] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        {(demande.technicien.nom || demande.technicien.email || 'I').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="truncate text-xs">
+                        <p className="font-black text-[#071530] truncate">
+                          {demande.technicien.nom || demande.technicien.email}
+                        </p>
+                        <p className="text-[10px] text-[#002B7F] font-bold">Actuellement en charge</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-bold">
+                    <span>Aucun intervenant assigné (En attente).</span>
+                  </div>
+                )}
+
+                {/* Sélecteur de Prise en charge / Assignation Admin */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[10px] font-bold text-[#002B7F] uppercase tracking-wider block">
+                    {demande.technicien ? 'Changer ou retirer l’intervenant :' : 'Assigner à un membre de l’équipe :'}
+                  </label>
+                  <select
+                    value={demande.technicien?.id || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      handleAssignTechnicien(val ? Number(val) : null);
+                    }}
+                    disabled={isAssigning}
+                    className="w-full px-3 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#002B7F] rounded-2xl text-xs font-bold text-[#071530] focus:outline-none cursor-pointer transition-all"
+                  >
+                    <option value="" disabled={!demande.technicien}>
+                      {demande.technicien ? '-- Retirer l’intervenant (Remettre en attente) --' : 'Choisir un intervenant...'}
+                    </option>
+                    {techniciens.map((tech) => (
+                      <option key={tech.id} value={tech.id}>
+                        {tech.nom || tech.username || tech.email} ({tech.role === 'admin' ? 'Admin' : 'Services Généraux'}) {tech.id === user?.id ? '- Vous' : ''}
+                      </option>
+                    ))}
+                    {demande.technicien && (
+                      <option value="">-- Retirer l’intervenant (Désassigner) --</option>
+                    )}
+                  </select>
+                </div>
+
+                {/* Contrôle du Statut par l'Admin */}
+                {user?.role === 'admin' && statuts.length > 0 && (
+                  <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                    <label className="text-[10px] font-bold text-[#002B7F] uppercase tracking-wider block">
+                      Modifier le statut (Supervision) :
+                    </label>
+                    <select
+                      value={demande.statut || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) handleAdminStatutChange(Number(val));
+                      }}
+                      disabled={isUpdatingStatut}
+                      className="w-full px-3 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#002B7F] rounded-2xl text-xs font-bold text-[#071530] focus:outline-none cursor-pointer transition-all"
+                    >
+                      {statuts.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.libelle} {s.id === demande.statut ? '(Actuel)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             )}
           </div>
