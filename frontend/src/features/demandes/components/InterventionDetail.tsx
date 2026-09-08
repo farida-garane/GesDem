@@ -93,9 +93,7 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
       setHistorique(historiqueData);
       setCommentaires(commentairesData);
       setEscalades(escaladesData);
-      setTechniciens(
-        (usersData || []).filter((u: User) => u.role === 'technicien' || u.role === 'admin')
-      );
+      setTechniciens(usersData || []);
 
       if (demandeData?.note_resolution) {
         setNoteResolution(demandeData.note_resolution);
@@ -413,10 +411,10 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
                         {demande.technicien.nom || demande.technicien.email} (Actuel)
                       </option>
                       {techniciens
-                        .filter((t) => t.id !== demande.technicien?.id)
+                        .filter((t) => t.id !== demande.technicien?.id && t.id !== demande.demandeur?.id)
                         .map((tech) => (
                           <option key={tech.id} value={tech.id}>
-                            {tech.nom || tech.username || tech.email} {tech.id === user?.id ? '(Vous)' : ''}
+                            {tech.nom || tech.username || tech.email} ({tech.role === 'admin' ? 'Admin' : tech.role === 'technicien' ? 'Services Généraux' : 'Demandeur'}) {tech.id === user?.id ? '(Vous)' : ''}
                           </option>
                         ))}
                       <option value="">-- Désassigner (remettre en file d&apos;attente) --</option>
@@ -430,7 +428,7 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
                   </div>
 
                   {/* 1. Bouton rapide : M'assigner à moi-même */}
-                  {user && (
+                  {user && user.id !== demande.demandeur?.id && (
                     <button
                       onClick={() => handleAssignTechnicien(user.id)}
                       disabled={isAssigning}
@@ -460,13 +458,15 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
                       className="w-full px-3 py-2 bg-white border border-[#CBD5E1] hover:border-[#002B7F] focus:border-[#002B7F] rounded-xl text-xs font-bold text-[#071530] focus:outline-none cursor-pointer transition-all"
                     >
                       <option value="" disabled>
-                        Choisir un membre des Services Généraux...
+                        Choisir un membre de l&apos;équipe...
                       </option>
-                      {techniciens.map((tech) => (
-                        <option key={tech.id} value={tech.id}>
-                          {tech.nom || tech.username || tech.email} {tech.id === user?.id ? '(Vous)' : ''}
-                        </option>
-                      ))}
+                      {techniciens
+                        .filter((tech) => tech.id !== demande.demandeur?.id)
+                        .map((tech) => (
+                          <option key={tech.id} value={tech.id}>
+                            {tech.nom || tech.username || tech.email} ({tech.role === 'admin' ? 'Admin' : tech.role === 'technicien' ? 'Services Généraux' : 'Demandeur'}) {tech.id === user?.id ? '(Vous)' : ''}
+                          </option>
+                        ))}
                     </select>
                   </div>
                 </div>

@@ -41,7 +41,7 @@ export function Sidebar() {
     {
       label: 'Statistiques',
       description: 'Indicateurs & métriques',
-      disabled: true,
+      href: '/statistiques',
     },
   ];
 

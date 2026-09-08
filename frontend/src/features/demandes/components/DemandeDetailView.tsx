@@ -86,9 +86,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
       setHistorique(historiqueData);
       setCommentaires(commentairesData);
       setEscalades(escaladesData);
-      setTechniciens(
-        (usersData || []).filter((u: User) => u.role === 'technicien' || u.role === 'admin')
-      );
+      setTechniciens(usersData || []);
 
       if (demandeData) {
         setEditObjet(demandeData.objet);
@@ -677,7 +675,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
               /* Vue Supervision Administrateur & Intervenant */
               <div className="space-y-3">
                 {demande.technicien ? (
-                  <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100 space-y-2">
+                  <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100 space-y-2">0
                     <div className="flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-xl bg-[#002B7F] text-white flex items-center justify-center font-bold text-xs shrink-0">
                         {(demande.technicien.nom || demande.technicien.email || 'I').charAt(0).toUpperCase()}
@@ -713,11 +711,13 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                     <option value="" disabled={!demande.technicien}>
                       {demande.technicien ? '-- Retirer l’intervenant (Remettre en attente) --' : 'Choisir un intervenant...'}
                     </option>
-                    {techniciens.map((tech) => (
-                      <option key={tech.id} value={tech.id}>
-                        {tech.nom || tech.username || tech.email} ({tech.role === 'admin' ? 'Admin' : 'Services Généraux'}) {tech.id === user?.id ? '- Vous' : ''}
-                      </option>
-                    ))}
+                    {techniciens
+                      .filter((tech) => tech.id !== demande.demandeur?.id)
+                      .map((tech) => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.nom || tech.username || tech.email} ({tech.role === 'admin' ? 'Admin' : tech.role === 'technicien' ? 'Services Généraux' : 'Demandeur'}) {tech.id === user?.id ? '- Vous' : ''}
+                        </option>
+                      ))}
                     {demande.technicien && (
                       <option value="">-- Retirer l’intervenant (Désassigner) --</option>
                     )}
