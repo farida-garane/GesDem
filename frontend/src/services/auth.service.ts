@@ -9,6 +9,8 @@ export const authService = {
       localStorage.setItem('gesdem_user', JSON.stringify({
         nom: data.username,
         role: data.role,
+        email: data.email,
+        departement: data.departement,
       }));
     }
     return data;
@@ -30,7 +32,18 @@ export const authService = {
   },
 
   async updateProfile(payload: Partial<User>): Promise<User> {
-    return api.patch<User>('/api/accounts/profile/', payload);
+    const updated = await api.patch<User>('/api/accounts/profile/', payload);
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('gesdem_user');
+      const currentUser = stored ? JSON.parse(stored) : {};
+      localStorage.setItem('gesdem_user', JSON.stringify({
+        ...currentUser,
+        nom: updated.nom || updated.username || currentUser.nom,
+        email: updated.email || currentUser.email,
+        departement: updated.departement ?? currentUser.departement,
+      }));
+    }
+    return updated;
   },
 
   async changePassword(payload: ChangePasswordPayload): Promise<{ success: boolean; message?: string }> {

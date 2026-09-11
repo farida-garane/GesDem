@@ -55,20 +55,31 @@ class ApiClient {
     if (!response.ok) {
       let errorMessage = `Erreur HTTP ${response.status}`;
       try {
-        const errorData = await response.json();
-        if (typeof errorData === 'object' && errorData !== null) {
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          } else if (errorData.detail) {
-            errorMessage = errorData.detail;
-          } else {
-            errorMessage = Object.entries(errorData)
-              .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
-              .join(' | ');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          if (typeof errorData === 'object' && errorData !== null) {
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            } else if (errorData.detail) {
+              errorMessage = errorData.detail;
+            } else {
+              errorMessage = Object.entries(errorData)
+                .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
+                .join(' | ');
+            }
+          }
+        } else {
+          const text = await response.text();
+          if (text) {
+            const titleMatch = text.match(/<title>(.*?)<\/title>/i);
+            if (titleMatch && titleMatch[1]) {
+              errorMessage = `${errorMessage}: ${titleMatch[1].trim()}`;
+            }
           }
         }
       } catch {
-        // Erreur de parsing JSON
+        // Fallback to generic message
       }
       throw new Error(errorMessage);
     }

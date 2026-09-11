@@ -13,7 +13,7 @@ import { Demande, Statut, HistoriqueStatut, Commentaire } from '@/types/demande'
 import { User } from '@/types/user';
 import { EscaladeExterne } from '@/types/escalade';
 import { EscaladeExterneModal } from '@/features/interventions/components/EscaladeExterneModal';
-import { JournalExterneSection } from '@/features/interventions/components/JournalExterneSection';
+
 import {
   Loader2,
   X,
@@ -112,6 +112,10 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
   // Handle status change
   const handleStatutChange = async (nouveauStatutId: number) => {
     if (!demande || demande.statut === nouveauStatutId) return;
+    if (user?.role !== 'admin' && user?.role !== 'technicien') {
+      showToast("Seuls l'intervenant et l'administrateur peuvent modifier le statut.", 'error');
+      return;
+    }
     setUpdatingStatut(true);
     try {
       await demandeService.updateDemandeStatut(demande.id, { statut: nouveauStatutId });
@@ -251,6 +255,7 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
   const statutCouleur = demande.statut_details?.couleur || '#64748b';
   const statutLibelle = demande.statut_details?.libelle || 'En attente';
   const isTermine = statutLibelle.toLowerCase().includes('resolu') || statutLibelle.toLowerCase().includes('cloture') || demande.statut === 4 || demande.statut === 5;
+  const canManageStatus = user?.role === 'admin' || user?.role === 'technicien';
 
   return (
     <div className="w-full space-y-8 animate-fade-in pb-16 relative">
@@ -473,33 +478,35 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
               )}
             </div>
 
-            {/* Changement de statut de la demande par l'intervenant */}
-            <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
-              <p className="text-[11px] font-black uppercase tracking-wider text-[#002B7F]">
-                Mettre à jour l&apos;état de la demande
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {statuts.map((s) => {
-                  const isActive = demande.statut === s.id;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      disabled={updatingStatut || isActive}
-                      onClick={() => handleStatutChange(s.id)}
-                      className={`px-3 py-2.5 rounded-xl text-xs font-bold border text-left flex items-center justify-between transition-all cursor-pointer ${
-                        isActive
-                          ? 'border-[#B3D1FF] bg-[#E8F1FF] text-[#002B7F]'
-                          : 'border-[#CBD5E1] bg-white hover:bg-[#F0F6FF] hover:border-[#002B7F] text-[#071530]'
-                      }`}
-                    >
-                      <span className="truncate">{s.libelle}</span>
-                      {isActive && <span className="text-[#002B7F] font-bold ml-1">✓</span>}
-                    </button>
-                  );
-                })}
+            {/* Changement de statut de la demande réservé uniquement aux intervenants et administrateurs */}
+            {canManageStatus && (
+              <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
+                <p className="text-[11px] font-black uppercase tracking-wider text-[#002B7F]">
+                  Mettre à jour l&apos;état de la demande
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {statuts.map((s) => {
+                    const isActive = demande.statut === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        disabled={updatingStatut || isActive}
+                        onClick={() => handleStatutChange(s.id)}
+                        className={`px-3 py-2.5 rounded-xl text-xs font-bold border text-left flex items-center justify-between transition-all cursor-pointer ${
+                          isActive
+                            ? 'border-[#B3D1FF] bg-[#E8F1FF] text-[#002B7F]'
+                            : 'border-[#CBD5E1] bg-white hover:bg-[#F0F6FF] hover:border-[#002B7F] text-[#071530]'
+                        }`}
+                      >
+                        <span className="truncate">{s.libelle}</span>
+                        {isActive && <span className="text-[#002B7F] font-bold ml-1">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
         {/* Action rapide : Finaliser / Clôturer avec note */}
@@ -527,12 +534,51 @@ export function InterventionDetail({ demandeId }: InterventionDetailProps) {
 
     </div>
 
-    {/* BLOC PRESTATAIRE EXTERNE & JOURNAL DES TRANSACTIONS */}
-    <JournalExterneSection
-      escalades={escalades}
-      onRefresh={loadData}
-      canEdit={!isTermine}
-    />
+    {/* BANNIÈRE PRESTATAIRE EXTERNE (si délégation en cours) */}
+    {escalades.length > 0 && (
+      <div className="space-y-3">
+        {escalades.map((esc) => (
+          <div key={esc.id} className="p-5 bg-[#E8F1FF] border border-[#B3D1FF] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <p className="text-[11px] font-black uppercase tracking-wider text-[#002B7F]">
+                Délégué à un prestataire externe
+              </p>
+              <p className="text-sm font-black text-[#071530]">
+                {esc.nom_prestataire}
+              </p>
+              {esc.motif && (
+                <p className="text-xs text-[#475569] font-semibold">
+                  Motif : {esc.motif}
+                </p>
+              )}
+            </div>
+            <div className="text-right space-y-1">
+              {esc.contact_telephone && (
+                <p className="text-xs font-bold text-[#071530]">
+                  📞 {esc.contact_telephone}
+                </p>
+              )}
+              {esc.date_retour_prevue && (
+                <p className="text-xs font-semibold text-[#002B7F]">
+                  Retour prévu : {formatDate(esc.date_retour_prevue)}
+                </p>
+              )}
+              <span className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase ${
+                esc.statut === 'repare_retourne' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                esc.statut === 'annule' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                'bg-amber-100 text-amber-800 border border-amber-200'
+              }`}>
+                {esc.statut === 'en_cours_reparation' ? 'En cours' :
+                 esc.statut === 'repare_retourne' ? 'Retourné' :
+                 esc.statut === 'annule' ? 'Annulé' :
+                 esc.statut === 'en_attente_devis' ? 'En attente devis' :
+                 esc.statut === 'en_attente_livraison' ? 'En attente livraison' : esc.statut}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
 
     {/* Grille 2 Colonnes : Bas */}
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

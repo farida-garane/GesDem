@@ -16,6 +16,9 @@ export interface LoginResponse {
   token: string;
   role: UserRole;
   username: string;
+  nom?: string;
+  email?: string;
+  departement?: string;
 }
 
 export interface RegisterPayload {

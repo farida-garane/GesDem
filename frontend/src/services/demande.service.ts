@@ -111,6 +111,10 @@ export const demandeService = {
     });
   },
 
+  async deleteDemande(id: number | string): Promise<void> {
+    await api.delete<void>(`/api/demandes/${id}/`);
+  },
+
   async getDemandeHistorique(demandeId: number | string): Promise<HistoriqueStatut[]> {
     try {
       return await api.get<HistoriqueStatut[]>(`/api/demandes/${demandeId}/historique/`);

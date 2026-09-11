@@ -24,6 +24,7 @@ export function ProfileForm() {
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
   const [departement, setDepartement] = useState('');
+  const [telephone, setTelephone] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -31,28 +32,31 @@ export function ProfileForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadProfile() {
       setLoading(true);
       try {
         const profile = await authService.getProfile();
-        if (profile) {
-          setNom(profile.nom || '');
+        if (isMounted && profile) {
+          setNom(profile.nom || profile.username || '');
           setEmail(profile.email || '');
           setDepartement(profile.departement || '');
+          setTelephone(profile.telephone || '');
         }
       } catch {
-        // En cas de non-connexion ou fallback
-        if (user) {
-          setNom(user.nom || '');
+        if (isMounted && user) {
+          setNom(user.nom || user.username || '');
           setEmail(user.email || '');
           setDepartement(user.departement || '');
+          setTelephone(user.telephone || '');
         }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
     loadProfile();
-  }, [user]);
+    return () => { isMounted = false; };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,15 +65,22 @@ export function ProfileForm() {
     setErrorMessage(null);
 
     try {
-      await authService.updateProfile({
+      const updated = await authService.updateProfile({
         nom: nom.trim(),
         email: email.trim(),
         departement: departement.trim(),
+        telephone: telephone.trim(),
       });
+
+      // Synchroniser localement les champs avec la réponse du serveur
+      setNom(updated.nom || updated.username || nom);
+      setEmail(updated.email || email);
+      setDepartement(updated.departement ?? departement);
+      setTelephone(updated.telephone ?? telephone);
 
       await refreshUser();
       setSuccessMessage('Vos informations de profil ont été mises à jour avec succès.');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setTimeout(() => setSuccessMessage(null), 3500);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Erreur lors de la mise à jour du profil.');
     } finally {
@@ -168,6 +179,17 @@ export function ProfileForm() {
               onChange={(e) => setDepartement(e.target.value)}
               disabled={isSaving || loading}
               leftIcon={<Building2 className="w-4 h-4" />}
+            />
+
+            {/* Téléphone */}
+            <Input
+              label="Téléphone"
+              type="tel"
+              placeholder="Ex : +223 70 00 00 00"
+              value={telephone}
+              onChange={(e) => setTelephone(e.target.value)}
+              disabled={isSaving || loading}
+              leftIcon={<Phone className="w-4 h-4" />}
             />
           </div>
 

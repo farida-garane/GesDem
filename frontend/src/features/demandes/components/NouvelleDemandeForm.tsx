@@ -165,9 +165,7 @@ export function NouvelleDemandeForm() {
               Nouvelle demande
             </h1>
           </div>
-          <p className="text-sm text-[#475569] font-semibold mt-1.5">
-            Déposez votre ticket auprès du service technique.
-          </p>
+          
         </div>
       </div>
 

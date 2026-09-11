@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
@@ -9,6 +10,29 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'nom', 'username', 'email', 'role', 'departement', 'telephone', 'is_active', 'password']
         read_only_fields = ['id']
+        extra_kwargs = {
+            'username': {'validators': []},
+            'email': {'validators': []},
+        }
+
+    def validate_username(self, value):
+        """Only raise if another user already has this username."""
+        qs = User.objects.filter(username__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Cet identifiant est déjà utilisé.")
+        return value
+
+    def validate_email(self, value):
+        """Only raise if another user already has this email."""
+        if value:
+            qs = User.objects.filter(email__iexact=value)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError("Cette adresse email est déjà utilisée.")
+        return value
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PriorityBadge } from '@/components/ui/PriorityBadge';
 import { SlaBadge } from '@/components/ui/SlaBadge';
 import { useAuth } from '@/context/AuthContext';
@@ -14,7 +15,8 @@ import { EscaladeExterne } from '@/types/escalade';
 import {
   Loader2,
   X,
-  UserCheck
+  UserCheck,
+  Trash2
 } from 'lucide-react';
 
 interface DemandeDetailViewProps {
@@ -23,6 +25,7 @@ interface DemandeDetailViewProps {
 
 export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [demande, setDemande] = useState<Demande | null>(null);
   const [statuts, setStatuts] = useState<Statut[]>([]);
   const [historique, setHistorique] = useState<HistoriqueStatut[]>([]);
@@ -66,6 +69,9 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
   const [editUrgence, setEditUrgence] = useState<UrgenceLevel>('moyen');
   const [editFile, setEditFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -252,6 +258,31 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
     }
   };
 
+  // Suppression définitive (disponible uniquement SI non prise en charge par un intervenant)
+  const handleDeleteDemande = async () => {
+    if (!demande) return;
+
+    if (demande.technicien) {
+      showToast('Impossible de supprimer une demande qui a déjà été prise en charge par un intervenant.', 'error');
+      setIsDeleteModalOpen(false);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await demandeService.deleteDemande(demande.id);
+      showToast('Votre demande a été supprimée .', 'success');
+      setIsDeleteModalOpen(false);
+      setTimeout(() => {
+        router.push('/demandes');
+      }, 1000);
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Erreur lors de la suppression', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -385,11 +416,16 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                   <span>Modifier</span>
                 </button>
 
+                
+
+                {/* Bouton Supprimer - disponible uniquement si N'A PAS ÉTÉ prise en charge */}
                 <button
-                  onClick={() => setIsCancelModalOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-800 text-xs font-bold flex items-center transition-all cursor-pointer"
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
                 >
-                  <span>Annuler</span>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Supprimer </span>
                 </button>
               </>
             )}
@@ -412,7 +448,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-[#002B7F]">
-                Dossier délégué à un Prestataire / SAV Externe
+                Dossier délégué à un Prestataire 
               </span>
               <span className="px-2.5 py-0.5 rounded-lg text-xs font-black bg-white text-[#002B7F] border border-[#B3D1FF]">
                 {escalades[0].nom_prestataire}
@@ -502,7 +538,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                     </h3>
                   </div>
                   <p className="text-xs text-[#1E293B] font-medium">
-                    Le service technique a indiqué avoir résolu cette demande. Merci de tester et de confirmer le bon fonctionnement.
+                    Les service  generaux  ont indiqué avoir résolu cette demande. Merci de tester et de confirmer le bon fonctionnement.
                   </p>
                 </div>
 
@@ -658,24 +694,30 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
               {isAssigning && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#002B7F]" />}
             </div>
 
-            {/* Vue normale / Demandeur */}
+            {/* Vue normale / Demandeur : Uniquement affichage statique de l'intervenant */}
             {user?.role !== 'admin' && user?.role !== 'technicien' ? (
               demande.technicien ? (
-                <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100">
-                  <p className="text-xs font-bold text-[#002B7F] truncate">
-                    {demande.technicien.nom || demande.technicien.email}
-                  </p>
+                <div className="p-3.5 rounded-2xl bg-[#E8F1FF] border border-[#B3D1FF] flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-xl bg-[#002B7F] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    {(demande.technicien.nom || demande.technicien.email || 'I').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="truncate text-xs">
+                    <p className="font-black text-[#071530] truncate">
+                      {demande.technicien.nom || demande.technicien.email}
+                    </p>
+                    <p className="text-[10px] text-[#002B7F] font-bold">Intervenant assigné</p>
+                  </div>
                 </div>
               ) : (
-                <div className="p-3 rounded-2xl bg-[#E8F1FF] text-xs text-[#002B7F] font-medium">
+                <div className="p-3.5 rounded-2xl bg-[#E8F1FF] text-xs text-[#002B7F] font-bold border border-[#B3D1FF]">
                   En attente de prise en charge par les Services Généraux.
                 </div>
               )
             ) : (
-              /* Vue Supervision Administrateur & Intervenant */
+              /* Vue Supervision (Administrateur & Techniciens uniquement) */
               <div className="space-y-3">
                 {demande.technicien ? (
-                  <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100 space-y-2">0
+                  <div className="p-3 rounded-2xl bg-[#E8F1FF] border border-blue-100 space-y-2">
                     <div className="flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-xl bg-[#002B7F] text-white flex items-center justify-center font-bold text-xs shrink-0">
                         {(demande.technicien.nom || demande.technicien.email || 'I').charAt(0).toUpperCase()}
@@ -694,7 +736,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                   </div>
                 )}
 
-                {/* Sélecteur de Prise en charge / Assignation Admin */}
+                {/* Sélecteur d'assignation réservé aux Techniciens et Administrateurs */}
                 <div className="space-y-1.5 pt-1">
                   <label className="text-[10px] font-bold text-[#002B7F] uppercase tracking-wider block">
                     {demande.technicien ? 'Changer ou retirer l’intervenant :' : 'Assigner à un membre de l’équipe :'}
@@ -724,11 +766,11 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                   </select>
                 </div>
 
-                {/* Contrôle du Statut par l'Admin */}
-                {user?.role === 'admin' && statuts.length > 0 && (
+                {/* Contrôle du Statut réservé à l'Administrateur et à l'Intervenant */}
+                {(user?.role === 'admin' || user?.role === 'technicien') && statuts.length > 0 && (
                   <div className="space-y-1.5 pt-2 border-t border-slate-100">
                     <label className="text-[10px] font-bold text-[#002B7F] uppercase tracking-wider block">
-                      Modifier le statut (Supervision) :
+                      Modifier le statut :
                     </label>
                     <select
                       value={demande.statut || ''}
@@ -754,7 +796,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
 
       </div>
 
-      {/* 5. HISTORIQUE & COMMENTAIRES / ÉCHANGES */}
+      {/* 5. HISTORIQUE ÉCHANGES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* TIMELINE DE L'HISTORIQUE */}
@@ -792,7 +834,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
               {commentaires.length === 0 ? (
                 <div className="p-6 text-center text-slate-600 text-xs font-medium">
-                  Aucun message pour le moment. Vous pouvez poser une question ci-dessous.
+                  Aucun message pour le moment. 
                 </div>
               ) : (
                 commentaires.map((com) => {
@@ -856,49 +898,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
 
       </div>
 
-      {/* MODAL D'ANNULATION */}
-      {isCancelModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-[#e2e8f0] max-w-md w-full p-6 space-y-4 shadow-sm">
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-[#0a1e42]">Annuler cette demande ?</h3>
-              <p className="text-xs text-[#475569] font-medium">
-                Cette action fermera définitivement le ticket #{demande.id}. Le support technique ne prendra plus en charge cette demande.
-              </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[#475569] uppercase">
-                Motif de l&apos;annulation (facultatif)
-              </label>
-              <textarea
-                rows={2}
-                value={cancelMotif}
-                onChange={(e) => setCancelMotif(e.target.value)}
-                placeholder="Ex: Problème résolu par moi-même, fausse manipulation..."
-                className="w-full p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs text-[#0a1e42] focus:bg-white focus:outline-none focus:border-[#0b3b8f]"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                onClick={() => setIsCancelModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-[#0a1e42] bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#0b3b8f]"
-              >
-                Garder la demande
-              </button>
-              <button
-                onClick={handleConfirmCancel}
-                disabled={isCancelling}
-                className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold flex items-center gap-1.5"
-              >
-                {isCancelling && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Confirmer l&apos;annulation</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  
 
       {/* MODAL DE MODIFICATION */}
       {isEditModalOpen && (
@@ -952,7 +952,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-[#0a1e42]">Remplacer la pièce jointe (optionnel)</label>
+              
                 <input
                   type="file"
                   onChange={(e) => setEditFile(e.target.files?.[0] || null)}
@@ -967,7 +967,7 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
                 onClick={() => setIsEditModalOpen(false)}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-[#0a1e42] bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#0b3b8f]"
               >
-                Annuler
+                
               </button>
               <button
                 type="submit"
@@ -992,10 +992,10 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-sm font-black text-[#071530]">
-                  Rouvrir le ticket {demande.reference || `#DEM-${demande.id}`}
+                  Rouvrir la demande  {demande.reference || `#DEM-${demande.id}`}
                 </h3>
                 <p className="text-[11px] text-[#475569]">
-                  Le ticket repassera en cours auprès de l&apos;équipe technique.
+                  La demande repassera en cours auprès des  service generaux.
                 </p>
               </div>
               <button
@@ -1039,6 +1039,44 @@ export function DemandeDetailView({ demandeId }: DemandeDetailViewProps) {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* MODAL DE SUPPRESSION DÉFINITIVE */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] max-w-md w-full p-6 space-y-4 shadow-sm">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-rose-600" />
+                </div>
+                <h3 className="text-base font-bold text-[#0a1e42]">Supprimer la demande ?</h3>
+              </div>
+              
+              
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-[#0a1e42] bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#0b3b8f] cursor-pointer transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteDemande}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-60"
+              >
+                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Oui, supprimer </span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

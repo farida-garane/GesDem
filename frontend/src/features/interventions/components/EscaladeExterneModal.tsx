@@ -128,12 +128,12 @@ export function EscaladeExterneModal({
             {/* Nom du Prestataire */}
             <div>
               <label className="block text-xs font-black text-[#071530] uppercase tracking-wider mb-1.5">
-                Nom du prestataire *
+                Nom 
               </label>
               <input
                 type="text"
                 required
-                placeholder="Ex : Dell France, Maintenance Climatisation, Orange..."
+                placeholder=""
                 value={nomPrestataire}
                 onChange={(e) => setNomPrestataire(e.target.value)}
                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-[#071530] font-semibold focus:outline-none focus:border-[#002B7F] transition-all"
@@ -141,39 +141,27 @@ export function EscaladeExterneModal({
             </div>
 
             {/* Prénom et Nom du contact */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="block text-xs font-black  tracking-wider mb-1.5">
               <div>
                 <label className="block text-xs font-bold text-[#475569] mb-1">
-                  Prénom du contact
+                  Prénom 
                 </label>
                 <input
                   type="text"
-                  placeholder="Ex : Jean"
+                  placeholder=""
                   value={prenomContact}
                   onChange={(e) => setPrenomContact(e.target.value)}
                   className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-[#071530] font-semibold focus:outline-none focus:border-[#002B7F] transition-all"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#475569] mb-1">
-                  Nom du contact
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex : Dupont"
-                  value={nomContact}
-                  onChange={(e) => setNomContact(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-[#071530] font-semibold focus:outline-none focus:border-[#002B7F] transition-all"
-                />
-              </div>
             </div>
 
             {/* Email & Téléphone */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-[#475569] mb-1">
-                  Email du prestataire
+                  Email 
                 </label>
                 <input
                   type="email"
@@ -186,11 +174,11 @@ export function EscaladeExterneModal({
 
               <div>
                 <label className="block text-xs font-bold text-[#475569] mb-1">
-                  Téléphone du prestataire
+                  Téléphone 
                 </label>
                 <input
                   type="tel"
-                  placeholder="Ex : 01 23 45 67 89"
+                  placeholder=""
                   value={contactTelephone}
                   onChange={(e) => setContactTelephone(e.target.value)}
                   className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-[#071530] font-semibold focus:outline-none focus:border-[#002B7F] transition-all"
@@ -208,12 +196,12 @@ export function EscaladeExterneModal({
             {/* Motif */}
             <div>
               <label className="block text-xs font-black text-[#071530] uppercase tracking-wider mb-1.5">
-                Motif &amp; Détail de la tâche déléguée *
+                Motif &amp; Détail de la tâche déléguée 
               </label>
               <textarea
                 rows={3}
                 required
-                placeholder="Ex : Réparation carte mère sous garantie ou diagnostic spécialisé..."
+                placeholder="Ex : Réparation carte mère sous garantie ..."
                 value={motif}
                 onChange={(e) => setMotif(e.target.value)}
                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-[#071530] font-semibold focus:outline-none focus:border-[#002B7F] transition-all resize-none leading-relaxed"
@@ -285,7 +273,7 @@ export function EscaladeExterneModal({
               disabled={loading}
               className="px-6 py-3 rounded-2xl bg-[#002B7F] hover:bg-[#001f5c] text-white text-xs sm:text-sm font-black transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
             >
-              {loading ? 'Enregistrement...' : 'Enregistrer la délégation'}
+              {loading ? 'Enregistrement...' : 'Enregistrer '}
             </button>
           </div>
 
@@ -294,4 +282,3 @@ export function EscaladeExterneModal({
     </div>
   );
 }
-
